@@ -607,21 +607,24 @@ function InboxCard({ r, onRead, onAccept, onDecline, onReply }) {
   const [replyText, setReplyText] = useState(r.seller_reply || "");
 
   const statusColor = {
-    accepted: "var(--sage)",
-    declined: "var(--terracotta)",
-    pending:  "var(--amber)",
+    accepted:  "var(--sage)",
+    declined:  "var(--terracotta)",
+    pending:   "var(--amber)",
+    withdrawn: "var(--ink-40)",
   }[r.status || "pending"];
 
   const statusBg = {
-    accepted: "var(--sage-bg)",
-    declined: "var(--terracotta-bg)",
-    pending:  "var(--amber-bg)",
+    accepted:  "var(--sage-bg)",
+    declined:  "var(--terracotta-bg)",
+    pending:   "var(--amber-bg)",
+    withdrawn: "var(--parchment)",
   }[r.status || "pending"];
 
   const statusLabel = {
-    accepted: "✓ Accepted",
-    declined: "✕ Declined",
-    pending:  "● Pending",
+    accepted:  "✓ Accepted",
+    declined:  "✕ Declined",
+    pending:   "● Pending",
+    withdrawn: "— Withdrawn",
   }[r.status || "pending"];
 
   const handleSaveReply = () => {
@@ -707,11 +710,11 @@ function InboxCard({ r, onRead, onAccept, onDecline, onReply }) {
           </div>
         )}
 
-        {/* Action buttons */}
+        {/* Action buttons — only on pending requests */}
         {r.status === "pending" && (
           <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
             <button onClick={()=>{ onAccept(); onRead(); }}
-              style={{ padding:"8px 18px", background:"var(--sage)", color:"white", border:"none", borderRadius:6, fontSize:13, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer", transition:"opacity .15s" }}>
+              style={{ padding:"8px 18px", background:"var(--sage)", color:"white", border:"none", borderRadius:6, fontSize:13, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer" }}>
               ✓ Accept
             </button>
             <button onClick={()=>{ onDecline(); onRead(); }}
@@ -724,7 +727,12 @@ function InboxCard({ r, onRead, onAccept, onDecline, onReply }) {
             </button>
           </div>
         )}
-        {r.status !== "pending" && !showReply && (
+        {r.status === "withdrawn" && (
+          <div style={{ fontSize:12, color:"var(--ink-40)", fontFamily:"var(--sans)", fontStyle:"italic" }}>
+            This request was withdrawn by the sender.
+          </div>
+        )}
+        {r.status !== "pending" && r.status !== "withdrawn" && !showReply && (
           <button onClick={()=>setShowReply(s=>!s)}
             style={{ padding:"6px 14px", background:"none", color:"var(--ink-40)", border:"1px solid var(--ink-08)", borderRadius:6, fontSize:12, fontFamily:"var(--sans)", cursor:"pointer" }}>
             {r.seller_reply ? "Edit reply" : "↩ Add a reply"}
@@ -959,6 +967,11 @@ export default function PuzzleSwap() {
   };
 
   const handleCancelRequest = async (requestId) => {
+    await sb.from("requests").update({ status:"withdrawn" }).eq("id", requestId);
+    setSent(prev => prev.map(r => r.id === requestId ? {...r, status:"withdrawn"} : r));
+  };
+
+  const handleDeleteRequest = async (requestId) => {
     await sb.from("requests").delete().eq("id", requestId);
     setSent(prev => prev.filter(r => r.id !== requestId));
   };
@@ -1531,9 +1544,9 @@ export default function PuzzleSwap() {
               : (
                 <div style={{ display:"flex", flexDirection:"column", gap:12, maxWidth:720 }}>
                   {sentRequests.map(r => {
-                    const statusColor = { accepted:"var(--sage)", declined:"var(--terracotta)", pending:"var(--amber)" }[r.status||"pending"];
-                    const statusBg    = { accepted:"var(--sage-bg)", declined:"var(--terracotta-bg)", pending:"var(--amber-bg)" }[r.status||"pending"];
-                    const statusLabel = { accepted:"✓ Accepted", declined:"✕ Declined", pending:"● Pending" }[r.status||"pending"];
+                    const statusColor = { accepted:"var(--sage)", declined:"var(--terracotta)", pending:"var(--amber)", withdrawn:"var(--ink-40)" }[r.status||"pending"];
+                    const statusBg    = { accepted:"var(--sage-bg)", declined:"var(--terracotta-bg)", pending:"var(--amber-bg)", withdrawn:"var(--parchment)" }[r.status||"pending"];
+                    const statusLabel = { accepted:"✓ Accepted", declined:"✕ Declined", pending:"● Pending", withdrawn:"— Withdrawn" }[r.status||"pending"];
                     return (
                       <div key={r.id} style={{ background:"var(--warm-white)", borderRadius:12, border:"1px solid var(--ink-08)", overflow:"hidden", boxShadow:"0 1px 4px rgba(26,21,16,0.05)" }}>
                         <div style={{ padding:"16px 20px", borderBottom: r.seller_reply || r.status==="accepted" ? "1px solid var(--ink-08)" : "none" }}>
@@ -1556,10 +1569,16 @@ export default function PuzzleSwap() {
                             </div>
                             <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:8, flexShrink:0 }}>
                               <span style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>{timeAgo(r.created_at)}</span>
-                              {r.status !== "declined" && (
+                              {(r.status === "pending" || r.status === "accepted") && (
                                 <button onClick={()=>handleCancelRequest(r.id)}
                                   style={{ fontSize:11, color:"var(--terracotta)", background:"none", border:"1px solid var(--terracotta)", borderRadius:5, padding:"4px 10px", cursor:"pointer", fontFamily:"var(--sans)", fontWeight:600 }}>
                                   {r.status === "accepted" ? "Withdraw" : "Cancel"}
+                                </button>
+                              )}
+                              {(r.status === "withdrawn" || r.status === "declined") && (
+                                <button onClick={()=>handleDeleteRequest(r.id)}
+                                  style={{ fontSize:11, color:"var(--ink-40)", background:"none", border:"1px solid var(--ink-15)", borderRadius:5, padding:"4px 10px", cursor:"pointer", fontFamily:"var(--sans)" }}>
+                                  Delete
                                 </button>
                               )}
                             </div>
