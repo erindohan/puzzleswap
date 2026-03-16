@@ -1019,7 +1019,8 @@ export default function PuzzleSwap() {
     setView("mylistings");
   };
 
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading]   = useState(false);
+  const [editingPuzzle, setEditing] = useState(null); // puzzle being edited
 
   const handlePhotoUpload = async (file) => {
     if (!file || !currentUser) return;
@@ -1039,6 +1040,45 @@ export default function PuzzleSwap() {
   const handleRemoveListing = async (puzzleId) => {
     await sb.from("puzzles").delete().eq("id", puzzleId);
     await loadPuzzles();
+  };
+
+  const handleStartEdit = (p) => {
+    setNl({
+      title:           p.title,
+      pieces:          p.pieces,
+      brand:           p.brand || "",
+      condition:       p.condition,
+      listingType:     p.listing_type,
+      tradePreference: p.trade_preference || "Both",
+      description:     p.description || "",
+      category:        p.category,
+      image:           p.image || "🎲",
+      photo_url:       p.photo_url || "",
+    });
+    setEditing(p);
+    setShowList(true);
+    setView("mylistings");
+  };
+
+  const handleUpdate = async () => {
+    if (!nl.title || !nl.pieces || !editingPuzzle) return;
+    const { error } = await sb.from("puzzles").update({
+      title:        nl.title,
+      brand:        nl.brand,
+      pieces:       parseInt(nl.pieces),
+      condition:    nl.condition,
+      listing_type: nl.listingType,
+      category:     nl.category,
+      description:  nl.description,
+      image:        nl.image,
+      photo_url:    nl.photo_url || null,
+    }).eq("id", editingPuzzle.id);
+    if (error) { alert("Could not update: " + error.message); return; }
+    await loadPuzzles();
+    setShowList(false);
+    setEditing(null);
+    setNl({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🎲", photo_url:"" });
+    setView("mylistings");
   };
 
   // ─── Saves ───────────────────────────────────────────────────────────────────
@@ -1291,8 +1331,12 @@ export default function PuzzleSwap() {
         {/* ── LIST FORM ── */}
         {showList && currentUser && (
           <div style={{ background:"var(--warm-white)", borderRadius:14, padding:40, border:"1px solid var(--ink-15)", maxWidth:580, margin:"0 auto", boxShadow:"0 20px 60px rgba(28,24,20,0.10)" }}>
-            <h2 style={{ fontSize:28, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:6 }}>List a Puzzle</h2>
-            <p style={{ fontSize:14, color:"var(--ink-70)", fontFamily:"var(--sans)", marginBottom:30 }}>Choose how you want to offer it — then we'll find it a new home.</p>
+            <h2 style={{ fontSize:28, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:6 }}>
+              {editingPuzzle ? "Edit listing" : "List a Puzzle"}
+            </h2>
+            <p style={{ fontSize:14, color:"var(--ink-70)", fontFamily:"var(--sans)", marginBottom:30 }}>
+              {editingPuzzle ? "Update your listing details below." : "Choose how you want to offer it — then we'll find it a new home."}
+            </p>
 
             {/* Listing type */}
             <div style={{ marginBottom:22 }}>
@@ -1364,8 +1408,10 @@ export default function PuzzleSwap() {
             </div>
             <TA label="Description" placeholder="All pieces present, completed once. Any details worth knowing…" value={nl.description} onChange={e=>setNl(p=>({...p,description:e.target.value}))} />
             <div style={{ display:"flex", gap:10 }}>
-              <GhostBtn style={{ flex:1 }} onClick={()=>setShowList(false)}>Cancel</GhostBtn>
-              <PrimaryBtn style={{ flex:2 }} onClick={handleSubmit}>List for Trade →</PrimaryBtn>
+              <GhostBtn style={{ flex:1 }} onClick={()=>{ setShowList(false); setEditing(null); setNl({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🎲", photo_url:"" }); }}>Cancel</GhostBtn>
+              <PrimaryBtn style={{ flex:2 }} onClick={editingPuzzle ? handleUpdate : handleSubmit}>
+                {editingPuzzle ? "Save changes →" : "List for Trade →"}
+              </PrimaryBtn>
             </div>
           </div>
         )}
@@ -1766,8 +1812,9 @@ export default function PuzzleSwap() {
                             <CondBadge cond={p.condition} />
                             <LTBadge type={p.listing_type} />
                           </div>
-                          <div style={{ paddingTop:10, borderTop:"1px solid var(--ink-08)", display:"flex", alignItems:"center" }}>
-                            <button onClick={()=>handleRemoveListing(p.id)} style={{ background:"none", border:"none", cursor:"pointer", fontSize:12, color:"var(--terracotta)", fontFamily:"var(--sans)" }}>Remove listing</button>
+                          <div style={{ paddingTop:10, borderTop:"1px solid var(--ink-08)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                            <button onClick={()=>handleRemoveListing(p.id)} style={{ background:"none", border:"none", cursor:"pointer", fontSize:12, color:"var(--terracotta)", fontFamily:"var(--sans)" }}>Remove</button>
+                            <button onClick={()=>handleStartEdit(p)} style={{ background:"none", border:"1px solid var(--ink-15)", borderRadius:5, cursor:"pointer", fontSize:12, color:"var(--ink-70)", fontFamily:"var(--sans)", padding:"4px 12px", fontWeight:500 }}>✏️ Edit</button>
                           </div>
                         </div>
                       </div>
