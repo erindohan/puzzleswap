@@ -685,8 +685,24 @@ export default function PuzzleSwap() {
 
   const loadPuzzles = async () => {
     setLoading(true);
-    const { data } = await sb.from("puzzles").select("*, profiles(name, location, trade_count)").order("created_at", { ascending: false });
-    if (data) setPuzzles(data.map(p => ({ ...p, userId: p.user_id, _owner: p.profiles ? { name: p.profiles.name, location: p.profiles.location, tradeCount: p.profiles.trade_count, id: p.user_id } : null })));
+    const { data: puzzleData, error } = await sb.from("puzzles").select("*").order("created_at", { ascending: false });
+    if (error) { console.error("loadPuzzles error:", error); setLoading(false); return; }
+    if (puzzleData) {
+      // Load all unique owner profiles
+      const userIds = [...new Set(puzzleData.map(p => p.user_id))];
+      let profileMap = {};
+      if (userIds.length > 0) {
+        const { data: profileData } = await sb.from("profiles").select("id, name, location, trade_count").in("id", userIds);
+        if (profileData) profileData.forEach(p => { profileMap[p.id] = p; });
+      }
+      setPuzzles(puzzleData.map(p => ({
+        ...p,
+        userId: p.user_id,
+        listing_type: p.listing_type,
+        boost_expiry: p.boost_expiry,
+        _owner: profileMap[p.user_id] ? { ...profileMap[p.user_id], tradeCount: profileMap[p.user_id].trade_count } : null
+      })));
+    }
     setLoading(false);
   };
 
@@ -912,7 +928,7 @@ export default function PuzzleSwap() {
           <div style={{ display:"flex", gap:8, alignItems:"center", flexShrink:0 }}>
             {currentUser ? (
               <>
-                <PrimaryBtn sm onClick={()=>{ setShowList(true); goBack(); setView("browse"); }}>+ List</PrimaryBtn>
+                <PrimaryBtn sm onClick={()=>{ setSel(null); setViewProf(null); setView("browse"); setShowList(true); }}>+ List</PrimaryBtn>
                 <div title={currentUser.name} style={{ cursor:"pointer" }} onClick={()=>{ setView("profile"); setProfEdit({...currentUser}); setSel(null); setViewProf(null); setShowList(false); }}>
                   <Avatar user={currentUser} size={32} />
                 </div>
