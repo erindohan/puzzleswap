@@ -391,7 +391,7 @@ function PirateshipBlock({ context = "detail" }) {
 }
 
 // ─── Request Modal ────────────────────────────────────────────────────────────
-function RequestModal({ puzzle, userOf, onClose }) {
+function RequestModal({ puzzle, userOf, onClose, onSend }) {
   const owner = userOf(puzzle);
   const [step, setStep] = useState("form");
   const [offerType, setOfferType] = useState("swap");
@@ -483,7 +483,7 @@ function RequestModal({ puzzle, userOf, onClose }) {
       <TA label="Message" value={msg} onChange={e=>setMsg(e.target.value)} />
       <div style={{ display:"flex", gap:10 }}>
         <GhostBtn style={{ flex:1 }} onClick={onClose}>Cancel</GhostBtn>
-        <PrimaryBtn style={{ flex:2 }} onClick={()=>setStep("sent")}>Send Request</PrimaryBtn>
+        <PrimaryBtn style={{ flex:2 }} onClick={()=>{ onSend({ offerType, swapDesc, topUp, offerAmt, msg }); setStep("sent"); }}>Send Request</PrimaryBtn>
       </div>
     </>
   );
@@ -630,6 +630,8 @@ export default function PuzzleSwap() {
   const [searchQ, setSearchQ]       = useState("");
   const [savedList, setSaved]       = useState([]);
   const [reqModal, setReqModal]     = useState(null);
+  const [requests, setRequests]     = useState([]);
+  const [unreadCount, setUnread]    = useState(0);
   const [aEmail, setAEmail]         = useState("");
   const [aPass, setAPass]           = useState("");
   const [aName, setAName]           = useState("");
@@ -659,14 +661,28 @@ export default function PuzzleSwap() {
     if (data) {
       setCU(data);
       loadSaved(userId);
+      loadRequests(userId);
     } else {
-      // Profile row missing — create a minimal one so user isn't locked out
       const { data: authUser } = await sb.auth.getUser();
       const email = authUser?.user?.email || "";
       const fallback = { id: userId, email, name: email.split("@")[0], location: "", trade_preference: "Both", trade_count: 0, member_since: new Date().toLocaleString("default",{month:"short",year:"numeric"}), bio: "" };
       await sb.from("profiles").upsert(fallback);
       setCU(fallback);
     }
+  };
+
+  const loadRequests = async (userId) => {
+    const { data } = await sb.from("requests").select("*").eq("seller_id", userId).order("created_at", { ascending: false });
+    if (data) {
+      setRequests(data);
+      setUnread(data.filter(r => !r.read).length);
+    }
+  };
+
+  const markRead = async (requestId) => {
+    await sb.from("requests").update({ read: true }).eq("id", requestId);
+    setRequests(prev => prev.map(r => r.id === requestId ? {...r, read: true} : r));
+    setUnread(prev => Math.max(0, prev - 1));
   };
 
   const loadPuzzles = async () => {
@@ -709,11 +725,12 @@ export default function PuzzleSwap() {
     if (!aName || !aEmail || !aPass) { setAErr("All starred fields are required."); return; }
     if (!aEmail.includes("@") || !aEmail.includes(".")) { setAErr("Please enter a valid email address."); return; }
     if (aPass.length < 6) { setAErr("Password must be at least 6 characters."); return; }
+    if (aLoc && !/^\d{5}$/.test(aLoc.trim())) { setAErr("Please enter a valid 5-digit ZIP code."); return; }
     const { data, error } = await sb.auth.signUp({ email: aEmail, password: aPass });
     if (error) { setAErr(error.message); return; }
     if (data.user) {
       const memberSince = new Date().toLocaleString("default", { month:"short", year:"numeric" });
-      await sb.from("profiles").insert({ id: data.user.id, email: aEmail, name: aName, location: aLoc, trade_preference: aPref, trade_count: 0, member_since: memberSince, bio: "" });
+      await sb.from("profiles").insert({ id: data.user.id, email: aEmail, name: aName, location: aLoc.trim(), trade_preference: aPref, trade_count: 0, member_since: memberSince, bio: "" });
       await loadProfile(data.user.id);
     }
     setShowAuth(false); setAErr(""); setAName(""); setAEmail(""); setAPass(""); setALoc("");
@@ -779,6 +796,23 @@ export default function PuzzleSwap() {
 
   const handleReq = p => { if (!currentUser) { setAuthTab("signup"); setShowAuth(true); } else setReqModal(p); };
 
+  const handleSendRequest = async ({ offerType, swapDesc, topUp, offerAmt, msg }) => {
+    if (!reqModal || !currentUser) return;
+    await sb.from("requests").insert({
+      puzzle_id:    reqModal.id,
+      puzzle_title: reqModal.title,
+      sender_id:    currentUser.id,
+      sender_name:  currentUser.name,
+      seller_id:    reqModal.user_id,
+      offer_type:   offerType,
+      message:      msg,
+      swap_desc:    swapDesc,
+      top_up:       topUp,
+      offer_amt:    offerAmt,
+      read:         false,
+    });
+  };
+
   // ─── Derived lists ────────────────────────────────────────────────────────────
   const userOf = p => p._owner || null;
 
@@ -793,8 +827,9 @@ export default function PuzzleSwap() {
 
   const sortB = arr => [...arr.filter(isBoosted), ...arr.filter(p => !isBoosted(p))];
 
-  // Show all puzzles on browse — hide own only when logged in AND there are other users' puzzles
+  // Hide own puzzles from browse when logged in — you list to trade with others
   const filtered = sortB(puzzles.filter(p => {
+    if (currentUser && p.user_id === currentUser.id) return false;
     if (catF !== "All" && p.category !== catF) return false;
     if (typeF !== "All" && p.listing_type !== typeF) return false;
     if (!p.title.toLowerCase().includes(searchQ.toLowerCase())) return false;
@@ -808,6 +843,7 @@ export default function PuzzleSwap() {
   const isBrowse = view==="browse" && !sel && !showList && !viewProfile;
   const isSaved  = view==="saved"  && !sel && !viewProfile;
   const isMyList = view==="mylistings" && !showList;
+  const isInbox  = view==="inbox";
 
   // Filter pill
   const FPill = ({label, active, onClick}) => (
@@ -889,7 +925,7 @@ export default function PuzzleSwap() {
             </div>
             <div style={{ width:1, height:18, background:"rgba(255,255,255,0.10)", margin:"0 4px", flexShrink:0 }} />
             {/* Nav links */}
-            {[["Browse","browse",isBrowse],...(currentUser?[["Saved"+(savedList.length?` (${savedList.length})`:""),"saved",isSaved],["My Listings","mylistings",isMyList]]:[])].map(([label,v,active])=>(
+            {[["Browse","browse",isBrowse],...(currentUser?[["Saved"+(savedList.length?` (${savedList.length})`:""),"saved",isSaved],["My Listings","mylistings",isMyList],["Inbox"+(unreadCount?` (${unreadCount})`:""),"inbox",view==="inbox"]]:[])].map(([label,v,active])=>(
               <button key={v} className="nav-link" onClick={()=>nav(v)}
                 style={{ padding:"6px 11px", background:active?"rgba(255,255,255,0.09)":"none", color:active?"white":"rgba(255,255,255,0.48)", border:"none", borderRadius:6, cursor:"pointer", fontSize:12, fontFamily:"var(--sans)", fontWeight:active?600:400, whiteSpace:"nowrap", transition:"all .15s" }}>
                 {label}
@@ -938,6 +974,7 @@ export default function PuzzleSwap() {
         {[
           ["🔍","Browse","browse",isBrowse],
           ["♡","Saved","saved",isSaved],
+          ...(currentUser ? [["📬","Inbox"+(unreadCount?` ${unreadCount}`:""),"inbox",view==="inbox"]] : []),
           ...(currentUser ? [["📋","My Listings","mylistings",isMyList]] : []),
           ...(currentUser ? [["👤","Profile","profile",view==="profile"]] : [["👤","Log in","login",false]]),
         ].map(([icon,label,v,active])=>(
@@ -1125,7 +1162,7 @@ export default function PuzzleSwap() {
               </div>
             </div>
             <SectionHead title="Their puzzles" />
-            <Grid items={enrich(puzzles.filter(p=>p.user_id===viewProfile.id))} />
+            <Grid items={puzzles.filter(p=>p.user_id===viewProfile.id)} />
           </div>
         )}
 
@@ -1293,7 +1330,48 @@ export default function PuzzleSwap() {
             <SectionHead title="Saved puzzles" sub="Puzzles you're keeping an eye on." />
             {savedList.length === 0
               ? <EmptyState icon="♡" title="Nothing saved yet" sub="Browse the marketplace and tap the heart to save any puzzle here." action={<PrimaryBtn onClick={()=>nav("browse")} style={{ margin:"0 auto", display:"inline-flex" }}>Browse Puzzles</PrimaryBtn>} />
-              : <Grid items={enrich(puzzles.filter(p=>savedList.includes(p.id)))} />
+              : <Grid items={puzzles.filter(p => savedList.includes(p.id))} />
+            }
+          </>
+        )}
+
+        {/* ── INBOX ── */}
+        {!showList && !sel && !viewProfile && view === "inbox" && currentUser && (
+          <>
+            <SectionHead title="Inbox" sub={unreadCount > 0 ? `${unreadCount} unread request${unreadCount!==1?"s":""}` : "All caught up."} />
+            {requests.length === 0
+              ? <EmptyState icon="📬" title="No requests yet" sub="When someone requests one of your puzzles, it'll show up here." />
+              : (
+                <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                  {requests.map(r => (
+                    <div key={r.id} onClick={()=>markRead(r.id)}
+                      style={{ background:"var(--warm-white)", borderRadius:10, border:`1px solid ${r.read?"var(--ink-08)":"var(--terracotta)"}`, padding:"18px 20px", cursor:"pointer", boxShadow: r.read?"none":"0 2px 12px rgba(200,90,48,0.10)", transition:"all .15s" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8, gap:12 }}>
+                        <div>
+                          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
+                            {!r.read && <span style={{ width:8, height:8, borderRadius:"50%", background:"var(--terracotta)", display:"inline-block", flexShrink:0 }} />}
+                            <span style={{ fontSize:15, fontFamily:"var(--serif)", color:"var(--ink)" }}>{r.sender_name}</span>
+                            <span style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>wants your <strong>{r.puzzle_title}</strong></span>
+                          </div>
+                          <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                            {r.offer_type && (
+                              <span style={{ fontSize:10, fontWeight:600, padding:"2px 8px", background:"var(--cobalt-bg)", color:"var(--cobalt)", borderRadius:3, fontFamily:"var(--sans)" }}>
+                                {r.offer_type==="cash"?"💵 Cash offer":r.offer_type==="swap"?"⇄ Swap":r.offer_type==="swap_plus"?"⇄ Swap + top-up":"Offer"}
+                              </span>
+                            )}
+                            {r.offer_amt && <span style={{ fontSize:10, padding:"2px 8px", background:"var(--sage-bg)", color:"var(--sage)", borderRadius:3, fontFamily:"var(--sans)", fontWeight:600 }}>${r.offer_amt}</span>}
+                            {r.top_up && <span style={{ fontSize:10, padding:"2px 8px", background:"var(--amber-bg)", color:"var(--amber)", borderRadius:3, fontFamily:"var(--sans)", fontWeight:600 }}>+${r.top_up} top-up</span>}
+                          </div>
+                        </div>
+                        <span style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)", whiteSpace:"nowrap", flexShrink:0 }}>{timeAgo(r.created_at)}</span>
+                      </div>
+                      {r.swap_desc && <div style={{ fontSize:13, color:"var(--ink-70)", fontFamily:"var(--sans)", marginBottom:6 }}>Offering: <em>{r.swap_desc}</em></div>}
+                      {r.message && <div style={{ fontSize:13, color:"var(--ink-70)", fontFamily:"var(--sans)", background:"var(--cream)", padding:"10px 12px", borderRadius:6, lineHeight:1.6 }}>"{r.message}"</div>}
+                      {!r.read && <div style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)", marginTop:8 }}>Tap to mark as read</div>}
+                    </div>
+                  ))}
+                </div>
+              )
             }
           </>
         )}
@@ -1352,7 +1430,7 @@ export default function PuzzleSwap() {
               <div style={{ fontSize:16, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:20 }}>Edit details</div>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
                 <Inp label="Name" value={profEdit.name} onChange={e=>setProfEdit(p=>({...p,name:e.target.value}))} />
-                <Inp label="Location" placeholder="City, State" value={profEdit.location||""} onChange={e=>setProfEdit(p=>({...p,location:e.target.value}))} />
+                <Inp label="ZIP Code" placeholder="e.g. 60126" value={profEdit.location||""} onChange={e=>setProfEdit(p=>({...p,location:e.target.value}))} />
               </div>
               <Sel label="Trade preference" value={profEdit.trade_preference||"Both"} onChange={e=>setProfEdit(p=>({...p,trade_preference:e.target.value}))}>{TRADE_OPTS.map(c=><option key={c}>{c}</option>)}</Sel>
               <Inp label="Bio (optional)" placeholder="A line about your puzzle style…" value={profEdit.bio||""} onChange={e=>setProfEdit(p=>({...p,bio:e.target.value}))} />
@@ -1398,7 +1476,7 @@ export default function PuzzleSwap() {
               <Inp label="Email *" type="email" placeholder="your@email.com" value={aEmail} onChange={e=>setAEmail(e.target.value)} />
               <Inp label="Password *" type="password" value={aPass} onChange={e=>setAPass(e.target.value)} />
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                <Inp label="Location" placeholder="City, State" value={aLoc} onChange={e=>setALoc(e.target.value)} />
+                <Inp label="ZIP Code" placeholder="e.g. 60126" value={aLoc} onChange={e=>setALoc(e.target.value)} hint="Used to show nearby puzzles" />
                 <Sel label="Trade preference" value={aPref} onChange={e=>setAPref(e.target.value)}>{TRADE_OPTS.map(c=><option key={c}>{c}</option>)}</Sel>
               </div>
               {aErr && <div style={{ color:"var(--terracotta)", fontSize:12, marginBottom:12, fontFamily:"var(--sans)" }}>{aErr}</div>}
@@ -1414,7 +1492,7 @@ export default function PuzzleSwap() {
       {/* ── REQUEST MODAL ── */}
       {reqModal && (
         <Modal onClose={()=>setReqModal(null)} wide>
-          <RequestModal puzzle={reqModal} userOf={userOf} onClose={()=>setReqModal(null)} />
+          <RequestModal puzzle={reqModal} userOf={userOf} onClose={()=>setReqModal(null)} onSend={handleSendRequest} />
         </Modal>
       )}
 
