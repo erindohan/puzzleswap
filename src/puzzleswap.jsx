@@ -12,7 +12,7 @@ const initStyles = () => {
   // DM Serif Display (editorial serif) + DM Sans (clean body)
   const link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap";
+  link.href = "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&family=Lato:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap";
   document.head.appendChild(link);
 
   const s = document.createElement("style");
@@ -67,8 +67,8 @@ const initStyles = () => {
       --teal: #2A6B62;
       --teal-bg: #E8F4F2;
 
-      --serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
-      --sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+      --sans: 'Lato', system-ui, -apple-system, sans-serif;
     }
 
     body { background: var(--warm-white); color: var(--ink); font-family: var(--sans); }
@@ -556,7 +556,7 @@ function PuzzleCard({ puzzle, onOpen, onRequest, saved, onToggleSave, animClass 
 
         {/* Card body */}
         <div style={{ padding:"13px 15px 15px" }}>
-          <div style={{ fontSize:17, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:2, lineHeight:1.2, fontWeight:600 }}>{puzzle.title}</div>
+          <div style={{ fontSize:18, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:2, lineHeight:1.2, fontWeight:700 }}>{puzzle.title}</div>
           <div style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)", marginBottom:10 }}>{puzzle.brand}</div>
 
           <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:13 }}>
@@ -1194,7 +1194,7 @@ export default function PuzzleSwap() {
   const SectionHead = ({ title, sub, action }) => (
     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:32 }}>
       <div>
-        <h2 style={{ fontSize:34, fontFamily:"var(--serif)", color:"var(--ink)", fontStyle:"italic", fontWeight:400, marginBottom:4 }}>{title}</h2>
+        <h2 style={{ fontSize:32, fontFamily:"var(--serif)", color:"var(--ink)", fontWeight:700, marginBottom:4, lineHeight:1.2 }}>{title}</h2>
         {sub && <p style={{ fontSize:14, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>{sub}</p>}
       </div>
       {action}
@@ -1237,7 +1237,7 @@ export default function PuzzleSwap() {
           {/* LEFT — logo */}
           <div style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", flexShrink:0 }} onClick={()=>nav("browse")}>
             <div style={{ fontSize:20 }}>🧩</div>
-            <span style={{ fontSize:19, fontFamily:"var(--serif)", color:"white", fontWeight:500, fontStyle:"italic", whiteSpace:"nowrap", letterSpacing:"0.5px" }}>puzzleswap</span>
+            <span style={{ fontSize:20, fontFamily:"var(--serif)", color:"white", fontWeight:700, fontStyle:"italic", whiteSpace:"nowrap", letterSpacing:"0.3px" }}>puzzleswap</span>
           </div>
 
           {/* CENTER — search + nav (desktop only) */}
@@ -1539,8 +1539,8 @@ export default function PuzzleSwap() {
                 <div style={{ display:"inline-flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.18)", borderRadius:2, padding:"4px 12px", fontSize:10, color:"rgba(255,255,255,0.80)", fontWeight:500, letterSpacing:"2px", marginBottom:24, alignSelf:"flex-start", textTransform:"uppercase", fontFamily:"var(--sans)" }}>
                   Free Puzzle Trading
                 </div>
-                <h1 style={{ fontSize:44, fontFamily:"var(--serif)", color:"white", lineHeight:1.08, marginBottom:18, fontWeight:400, fontStyle:"italic" }}>
-                  Done with it?<br /><span style={{ color:"rgba(255,220,210,0.95)", fontStyle:"normal" }}>Pass it on.</span>
+                <h1 style={{ fontSize:46, fontFamily:"var(--serif)", color:"white", lineHeight:1.10, marginBottom:18, fontWeight:700 }}>
+                  Done with it?<br /><em style={{ color:"rgba(255,220,210,0.95)", fontWeight:400 }}>Pass it on.</em>
                 </h1>
                 <p style={{ fontSize:14, color:"rgba(255,255,255,0.65)", fontFamily:"var(--sans)", lineHeight:1.75, marginBottom:32, maxWidth:300, fontWeight:300 }}>
                   Trade completed puzzles with people who'll actually do them. Swap, gift, or sell — local meetup or shipped nationwide.
