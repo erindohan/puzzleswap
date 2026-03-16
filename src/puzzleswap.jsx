@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 // ─── Supabase client ──────────────────────────────────────────────────────────
@@ -277,9 +277,21 @@ function CondBadge({ cond }) {
   );
 }
 
-function PuzzleBox({ artIdx, emoji, size = "md", category = "" }) {
+function PuzzleBox({ artIdx, emoji, size = "md", category = "", photoUrl = "" }) {
   const p = PIECE_PALETTE[artIdx % PIECE_PALETTE.length];
   const h = size === "lg" ? 260 : size === "sm" ? 100 : 180;
+
+  // If we have a real photo, show it instead of the illustrated box
+  if (photoUrl) return (
+    <div style={{ height: h, position:"relative", overflow:"hidden", background:"var(--parchment)" }}>
+      <img src={photoUrl} alt="" style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }} />
+      <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"linear-gradient(transparent, rgba(0,0,0,0.55))", padding:"16px 12px 8px", display:"flex", justifyContent:"space-between", alignItems:"flex-end" }}>
+        <span style={{ fontSize:8, fontFamily:"var(--sans)", fontWeight:600, color:"rgba(255,255,255,0.8)", letterSpacing:"2px", textTransform:"uppercase" }}>PUZZLE</span>
+        <span style={{ fontSize:8, fontFamily:"var(--sans)", color:"rgba(255,255,255,0.5)", letterSpacing:"1px", textTransform:"uppercase" }}>{category || "JIGSAW"}</span>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ height: h, background: p.bg, position: "relative", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ position:"absolute", inset:10, border:`1px solid ${p.accent}30`, borderRadius:2 }} />
@@ -440,7 +452,10 @@ function RequestModal({ puzzle, userOf, currentUser, onClose, onSend }) {
     <>
       {/* Puzzle preview */}
       <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:20, padding:"13px 16px", background:"var(--parchment)", borderRadius:8 }}>
-        <div style={{ width:48, height:48, background:PIECE_PALETTE[puzzle.art%PIECE_PALETTE.length].bg, borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>{puzzle.image||"🧩"}</div>
+        {puzzle.photo_url
+          ? <img src={puzzle.photo_url} alt="" style={{ width:48, height:48, objectFit:"cover", borderRadius:6, flexShrink:0 }} />
+          : <div style={{ width:48, height:48, background:PIECE_PALETTE[puzzle.art%PIECE_PALETTE.length].bg, borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>{puzzle.image||"🧩"}</div>
+        }
         <div>
           <div style={{ fontSize:15, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:2 }}>{puzzle.title}</div>
           <div style={{ fontSize:12, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>{puzzle.pieces.toLocaleString()} pieces · {owner?.name}</div>
@@ -537,7 +552,7 @@ function PuzzleCard({ puzzle, onOpen, onRequest, saved, onToggleSave, animClass 
       <div style={{ borderRadius:10, overflow:"hidden" }}>
         {/* Art */}
         <div style={{ position:"relative" }}>
-          <PuzzleBox artIdx={puzzle.art||0} emoji={puzzle.image||"🧩"} size="md" category={puzzle.category} />
+          <PuzzleBox artIdx={puzzle.art||0} emoji={puzzle.image||"🧩"} size="md" category={puzzle.category} photoUrl={puzzle.photo_url||""} />
           <PieceCount pieces={puzzle.pieces} />
           <button style={{ position:"absolute", top:10, left:10, background:"rgba(26,21,16,0.55)", backdropFilter:"blur(8px)", border:`1px solid ${saved?"var(--amber)":"rgba(255,255,255,0.15)"}`, borderRadius:5, width:32, height:32, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, color:saved?"var(--amber)":"rgba(255,255,255,0.7)", transition:"all .15s" }}
             onClick={e=>{ e.stopPropagation(); onToggleSave(puzzle.id); }}>
@@ -602,9 +617,7 @@ function HowItWorks() {
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 // ─── InboxCard ────────────────────────────────────────────────────────────────
-function InboxCard({ r, onRead, onAccept, onDecline, onReply }) {
-  const [showReply, setShowReply] = useState(false);
-  const [replyText, setReplyText] = useState(r.seller_reply || "");
+function InboxCard({ r, onRead, onAccept, onDecline, onOpenThread }) {
 
   const statusColor = {
     accepted:  "var(--sage)",
@@ -627,10 +640,6 @@ function InboxCard({ r, onRead, onAccept, onDecline, onReply }) {
     withdrawn: "— Withdrawn",
   }[r.status || "pending"];
 
-  const handleSaveReply = () => {
-    onReply(replyText);
-    setShowReply(false);
-  };
 
   return (
     <div style={{ background:"var(--warm-white)", borderRadius:12, border:`1px solid ${!r.read?"var(--terracotta)":"var(--ink-08)"}`, overflow:"hidden", boxShadow:!r.read?"0 2px 16px rgba(200,90,48,0.12)":"0 1px 4px rgba(26,21,16,0.05)", transition:"all .2s" }}>
@@ -675,41 +684,6 @@ function InboxCard({ r, onRead, onAccept, onDecline, onReply }) {
           </div>
         )}
 
-        {/* Seller reply shown if exists */}
-        {r.seller_reply && (
-          <div style={{ fontSize:13, color:"var(--sage)", fontFamily:"var(--sans)", background:"var(--sage-bg)", padding:"10px 14px", borderRadius:6, lineHeight:1.65, marginBottom:12, border:"1px solid rgba(61,107,69,0.15)" }}>
-            <span style={{ fontWeight:600, display:"block", marginBottom:3, fontSize:11, textTransform:"uppercase", letterSpacing:".5px" }}>Your reply</span>
-            {r.seller_reply}
-          </div>
-        )}
-
-        {/* Accepted — show contact email */}
-        {r.status === "accepted" && r.sender_email && (
-          <div style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px", background:"var(--sage-bg)", borderRadius:8, marginBottom:12, border:"1px solid rgba(61,107,69,0.2)" }}>
-            <span style={{ fontSize:18 }}>✉️</span>
-            <div>
-              <div style={{ fontSize:12, fontWeight:600, color:"var(--sage)", fontFamily:"var(--sans)", marginBottom:2 }}>Trade accepted — reach out to coordinate</div>
-              <a href={`mailto:${r.sender_email}`} style={{ fontSize:13, color:"var(--cobalt)", fontFamily:"var(--sans)", fontWeight:600 }}>{r.sender_email}</a>
-            </div>
-          </div>
-        )}
-
-        {/* Reply box */}
-        {showReply && (
-          <div style={{ marginBottom:12 }}>
-            <textarea
-              value={replyText}
-              onChange={e=>setReplyText(e.target.value)}
-              placeholder="Write a reply to the requester…"
-              style={{ width:"100%", padding:"10px 12px", background:"var(--warm-white)", border:"1px solid var(--ink-15)", borderRadius:8, fontSize:13, fontFamily:"var(--sans)", color:"var(--ink)", resize:"vertical", minHeight:80 }}
-            />
-            <div style={{ display:"flex", gap:8, marginTop:8 }}>
-              <button onClick={()=>setShowReply(false)} style={{ padding:"7px 14px", background:"none", border:"1px solid var(--ink-15)", borderRadius:6, fontSize:12, fontFamily:"var(--sans)", cursor:"pointer", color:"var(--ink-70)" }}>Cancel</button>
-              <button onClick={handleSaveReply} style={{ padding:"7px 16px", background:"var(--ink)", color:"white", border:"none", borderRadius:6, fontSize:12, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer" }}>Save reply</button>
-            </div>
-          </div>
-        )}
-
         {/* Action buttons — only on pending requests */}
         {r.status === "pending" && (
           <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
@@ -721,23 +695,92 @@ function InboxCard({ r, onRead, onAccept, onDecline, onReply }) {
               style={{ padding:"8px 18px", background:"none", color:"var(--terracotta)", border:"1px solid var(--terracotta)", borderRadius:6, fontSize:13, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer" }}>
               ✕ Decline
             </button>
-            <button onClick={()=>{ setShowReply(s=>!s); onRead(); }}
-              style={{ padding:"8px 18px", background:"none", color:"var(--ink-70)", border:"1px solid var(--ink-15)", borderRadius:6, fontSize:13, fontFamily:"var(--sans)", fontWeight:500, cursor:"pointer" }}>
-              ↩ Reply
-            </button>
           </div>
+        )}
+        {r.status === "accepted" && (
+          <button onClick={()=>{ onOpenThread(r.id); onRead(); }}
+            style={{ padding:"8px 18px", background:"var(--terracotta)", color:"white", border:"none", borderRadius:6, fontSize:13, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer", display:"inline-flex", alignItems:"center", gap:6 }}>
+            💬 Open Messages
+          </button>
         )}
         {r.status === "withdrawn" && (
           <div style={{ fontSize:12, color:"var(--ink-40)", fontFamily:"var(--sans)", fontStyle:"italic" }}>
             This request was withdrawn by the sender.
           </div>
         )}
-        {r.status !== "pending" && r.status !== "withdrawn" && !showReply && (
-          <button onClick={()=>setShowReply(s=>!s)}
-            style={{ padding:"6px 14px", background:"none", color:"var(--ink-40)", border:"1px solid var(--ink-08)", borderRadius:6, fontSize:12, fontFamily:"var(--sans)", cursor:"pointer" }}>
-            {r.seller_reply ? "Edit reply" : "↩ Add a reply"}
+      </div>
+    </div>
+  );
+}
+
+// ─── MessageThread ────────────────────────────────────────────────────────────
+function MessageThread({ requestId, currentUserId, messages, onSend, onClose, request }) {
+  const [text, setText] = useState("");
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior:"smooth" });
+  }, [messages]);
+
+  const handleSend = () => {
+    if (!text.trim()) return;
+    onSend(requestId, text);
+    setText("");
+  };
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(28,24,20,0.6)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:999, padding:24, backdropFilter:"blur(6px)" }} onClick={onClose}>
+      <div style={{ background:"var(--warm-white)", borderRadius:14, width:"100%", maxWidth:520, maxHeight:"80vh", display:"flex", flexDirection:"column", border:"1px solid var(--ink-15)", boxShadow:"0 40px 80px rgba(28,24,20,0.25)" }} onClick={e=>e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{ padding:"16px 20px", borderBottom:"1px solid var(--ink-08)", display:"flex", justifyContent:"space-between", alignItems:"center", flexShrink:0 }}>
+          <div>
+            <div style={{ fontSize:15, fontFamily:"var(--serif)", color:"var(--ink)" }}>{request?.puzzle_title}</div>
+            <div style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)", marginTop:2 }}>
+              Trade with {currentUserId === request?.seller_id ? request?.sender_name : "seller"}
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background:"none", border:"none", fontSize:18, cursor:"pointer", color:"var(--ink-40)", padding:4 }}>✕</button>
+        </div>
+
+        {/* Messages */}
+        <div style={{ flex:1, overflowY:"auto", padding:"16px 20px", display:"flex", flexDirection:"column", gap:10 }}>
+          {messages.length === 0 && (
+            <div style={{ textAlign:"center", color:"var(--ink-40)", fontFamily:"var(--sans)", fontSize:13, padding:"20px 0" }}>No messages yet. Say hi!</div>
+          )}
+          {messages.map(m => {
+            const isMe = m.sender_id === currentUserId;
+            return (
+              <div key={m.id} style={{ display:"flex", flexDirection:"column", alignItems:isMe?"flex-end":"flex-start" }}>
+                {!isMe && <div style={{ fontSize:10, color:"var(--ink-40)", fontFamily:"var(--sans)", marginBottom:3, paddingLeft:4 }}>{m.sender_name}</div>}
+                <div style={{
+                  maxWidth:"75%", padding:"10px 14px", borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",
+                  background:isMe?"var(--terracotta)":"var(--cream)",
+                  color:isMe?"white":"var(--ink)",
+                  fontSize:14, fontFamily:"var(--sans)", lineHeight:1.55,
+                  boxShadow:"0 1px 4px rgba(26,21,16,0.08)"
+                }}>{m.content}</div>
+                <div style={{ fontSize:10, color:"var(--ink-40)", fontFamily:"var(--sans)", marginTop:3, paddingLeft:4, paddingRight:4 }}>{timeAgo(m.created_at)}</div>
+              </div>
+            );
+          })}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Input */}
+        <div style={{ padding:"12px 16px", borderTop:"1px solid var(--ink-08)", display:"flex", gap:8, flexShrink:0 }}>
+          <input
+            value={text}
+            onChange={e=>setText(e.target.value)}
+            onKeyDown={e=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); handleSend(); }}}
+            placeholder="Type a message…"
+            style={{ flex:1, padding:"10px 14px", background:"var(--cream)", border:"1px solid var(--ink-15)", borderRadius:99, fontSize:13, fontFamily:"var(--sans)", color:"var(--ink)", outline:"none" }}
+          />
+          <button onClick={handleSend}
+            style={{ padding:"10px 18px", background:"var(--terracotta)", color:"white", border:"none", borderRadius:99, fontSize:13, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer", flexShrink:0 }}>
+            Send
           </button>
-        )}
+        </div>
       </div>
     </div>
   );
@@ -773,13 +816,16 @@ export default function PuzzleSwap() {
   const [requests, setRequests]     = useState([]);
   const [sentRequests, setSent]     = useState([]);
   const [unreadCount, setUnread]    = useState(0);
+  const [openThread, setOpenThread] = useState(null); // request id of open thread
+  const [threads, setThreads]       = useState({});   // { requestId: [messages] }
+  const [unreadMsgs, setUnreadMsgs] = useState(0);
   const [aEmail, setAEmail]         = useState("");
   const [aPass, setAPass]           = useState("");
   const [aName, setAName]           = useState("");
   const [aLoc, setALoc]             = useState("");
   const [aPref, setAPref]           = useState("Both");
   const [aErr, setAErr]             = useState("");
-  const [nl, setNl] = useState({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🎲" });
+  const [nl, setNl] = useState({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🎲", photo_url:"" });
   const [profEdit, setProfEdit]     = useState(null);
 
   // ─── Load session + puzzles on mount ────────────────────────────────────────
@@ -804,6 +850,7 @@ export default function PuzzleSwap() {
       loadSaved(userId);
       loadRequests(userId);
       loadSentRequests(userId);
+      loadAllThreads(userId);
     } else {
       const { data: authUser } = await sb.auth.getUser();
       const email = authUser?.user?.email || "";
@@ -824,6 +871,59 @@ export default function PuzzleSwap() {
   const loadSentRequests = async (userId) => {
     const { data } = await sb.from("requests").select("*").eq("sender_id", userId).order("created_at", { ascending: false });
     if (data) setSent(data);
+  };
+
+  const loadThread = async (requestId) => {
+    const { data } = await sb.from("messages").select("*").eq("request_id", requestId).order("created_at", { ascending: true });
+    if (data) setThreads(prev => ({ ...prev, [requestId]: data }));
+    return data || [];
+  };
+
+  const loadAllThreads = async (userId) => {
+    // Get all messages where user is involved (sent or received)
+    const { data } = await sb.from("messages").select("*").order("created_at", { ascending: true });
+    if (!data) return;
+    // Group by request_id
+    const grouped = {};
+    data.forEach(m => {
+      if (!grouped[m.request_id]) grouped[m.request_id] = [];
+      grouped[m.request_id].push(m);
+    });
+    setThreads(grouped);
+    // Count unread messages not sent by current user
+    const unread = data.filter(m => !m.read && m.sender_id !== userId).length;
+    setUnreadMsgs(unread);
+  };
+
+  const sendMessage = async (requestId, content) => {
+    if (!content.trim() || !currentUser) return;
+    const { data } = await sb.from("messages").insert({
+      request_id:  requestId,
+      sender_id:   currentUser.id,
+      sender_name: currentUser.name,
+      content:     content.trim(),
+      read:        false,
+    }).select().single();
+    if (data) {
+      setThreads(prev => ({
+        ...prev,
+        [requestId]: [...(prev[requestId] || []), data]
+      }));
+    }
+  };
+
+  const markThreadRead = async (requestId) => {
+    if (!currentUser) return;
+    await sb.from("messages").update({ read: true })
+      .eq("request_id", requestId)
+      .neq("sender_id", currentUser.id);
+    setThreads(prev => ({
+      ...prev,
+      [requestId]: (prev[requestId] || []).map(m =>
+        m.sender_id !== currentUser.id ? {...m, read: true} : m
+      )
+    }));
+    setUnreadMsgs(prev => Math.max(0, prev - (threads[requestId]||[]).filter(m => !m.read && m.sender_id !== currentUser.id).length));
   };
 
   const markRead = async (requestId) => {
@@ -903,6 +1003,7 @@ export default function PuzzleSwap() {
       category: nl.category,
       description: nl.description,
       image: nl.image,
+      photo_url: nl.photo_url || null,
       art: Math.floor(Math.random() * PIECE_PALETTE.length),
       saves: 0,
       boost_expiry: null,
@@ -914,11 +1015,26 @@ export default function PuzzleSwap() {
     }
     await loadPuzzles();
     setShowList(false);
-    setNl({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🎲" });
+    setNl({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🎲", photo_url:"" });
     setView("mylistings");
   };
 
-  const handleRemoveListing = async (puzzleId) => {
+  const [uploading, setUploading] = useState(false);
+
+  const handlePhotoUpload = async (file) => {
+    if (!file || !currentUser) return;
+    const ext  = file.name.split(".").pop();
+    const path = `${currentUser.id}/${Date.now()}.${ext}`;
+    setUploading(true);
+    const { error } = await sb.storage.from("puzzle-images").upload(path, file, { upsert: true });
+    if (!error) {
+      const { data } = sb.storage.from("puzzle-images").getPublicUrl(path);
+      setNl(p => ({ ...p, photo_url: data.publicUrl }));
+    } else {
+      alert("Upload failed: " + error.message);
+    }
+    setUploading(false);
+  };
     await sb.from("puzzles").delete().eq("id", puzzleId);
     await loadPuzzles();
   };
@@ -978,16 +1094,20 @@ export default function PuzzleSwap() {
 
   const handleAccept = async (requestId) => {
     await sb.from("requests").update({ status:"accepted", read:true }).eq("id", requestId);
+    // Auto-send opening message so thread exists
+    await sb.from("messages").insert({
+      request_id:  requestId,
+      sender_id:   currentUser.id,
+      sender_name: currentUser.name,
+      content:     "Great news — I've accepted your request! Let's coordinate the swap here.",
+      read:        false,
+    });
     await loadRequests(currentUser.id);
+    await loadAllThreads(currentUser.id);
   };
 
   const handleDecline = async (requestId) => {
     await sb.from("requests").update({ status:"declined", read:true }).eq("id", requestId);
-    await loadRequests(currentUser.id);
-  };
-
-  const handleReply = async (requestId, reply) => {
-    await sb.from("requests").update({ seller_reply:reply, read:true }).eq("id", requestId);
     await loadRequests(currentUser.id);
   };
 
@@ -1103,7 +1223,7 @@ export default function PuzzleSwap() {
             </div>
             <div style={{ width:1, height:18, background:"rgba(255,255,255,0.10)", margin:"0 4px", flexShrink:0 }} />
             {/* Nav links */}
-            {[["Browse","browse",isBrowse],...(currentUser?[["Saved"+(savedList.length?` (${savedList.length})`:""),"saved",isSaved],["My Listings","mylistings",isMyList],["Inbox"+(unreadCount?` (${unreadCount})`:""),"inbox",view==="inbox"],["My Requests","outbox",view==="outbox"]]:[])].map(([label,v,active])=>(
+            {[["Browse","browse",isBrowse],...(currentUser?[["Saved"+(savedList.length?` (${savedList.length})`:""),"saved",isSaved],["My Listings","mylistings",isMyList],["Inbox"+((unreadCount+unreadMsgs)?` (${unreadCount+unreadMsgs})`:""),"inbox",view==="inbox"],["My Requests","outbox",view==="outbox"]]:[])].map(([label,v,active])=>(
               <button key={v} className="nav-link" onClick={()=>nav(v)}
                 style={{ padding:"6px 11px", background:active?"rgba(255,255,255,0.09)":"none", color:active?"white":"rgba(255,255,255,0.48)", border:"none", borderRadius:6, cursor:"pointer", fontSize:12, fontFamily:"var(--sans)", fontWeight:active?600:400, whiteSpace:"nowrap", transition:"all .15s" }}>
                 {label}
@@ -1152,7 +1272,7 @@ export default function PuzzleSwap() {
         {[
           ["🔍","Browse","browse",isBrowse],
           ["♡","Saved","saved",isSaved],
-          ...(currentUser ? [["📬","Inbox"+(unreadCount?` ${unreadCount}`:""),"inbox",view==="inbox"],["📤","Sent","outbox",view==="outbox"]] : []),
+          ...(currentUser ? [["📬","Inbox"+((unreadCount+unreadMsgs)?` ${unreadCount+unreadMsgs}`:""),"inbox",view==="inbox"],["📤","Sent","outbox",view==="outbox"]] : []),
           ...(currentUser ? [["📋","My Listings","mylistings",isMyList]] : []),
           ...(currentUser ? [["👤","Profile","profile",view==="profile"]] : [["👤","Log in","login",false]]),
         ].map(([icon,label,v,active])=>(
@@ -1200,6 +1320,26 @@ export default function PuzzleSwap() {
               </div>
             </div>
 
+            {/* Photo upload */}
+            <div style={{ marginBottom:18 }}>
+              <div style={{ fontSize:11, fontWeight:600, color:"var(--ink-70)", textTransform:"uppercase", letterSpacing:".8px", marginBottom:8 }}>
+                Photo <span style={{ fontSize:10, fontWeight:400, textTransform:"none", letterSpacing:0, color:"var(--ink-40)" }}>— optional, shows instead of icon on your card</span>
+              </div>
+              {nl.photo_url ? (
+                <div style={{ position:"relative", display:"inline-block" }}>
+                  <img src={nl.photo_url} alt="puzzle" style={{ width:120, height:90, objectFit:"cover", borderRadius:8, border:"1px solid var(--ink-15)", display:"block" }} />
+                  <button onClick={()=>setNl(p=>({...p,photo_url:""}))}
+                    style={{ position:"absolute", top:-8, right:-8, width:22, height:22, borderRadius:"50%", background:"var(--terracotta)", color:"white", border:"none", cursor:"pointer", fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700 }}>✕</button>
+                </div>
+              ) : (
+                <label style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 16px", background:"var(--cream)", border:`1.5px dashed var(--tan)`, borderRadius:8, cursor:"pointer", width:"fit-content" }}>
+                  <span style={{ fontSize:20 }}>{uploading ? "⏳" : "📷"}</span>
+                  <span style={{ fontSize:13, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>{uploading ? "Uploading…" : "Add a photo of your puzzle"}</span>
+                  <input type="file" accept="image/*" style={{ display:"none" }} onChange={e=>{ if(e.target.files[0]) handlePhotoUpload(e.target.files[0]); }} />
+                </label>
+              )}
+            </div>
+
             <div className="form-two-col" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
               <Inp label="Title *" placeholder="e.g. Starry Night" value={nl.title} onChange={e=>setNl(p=>({...p,title:e.target.value}))} />
               <Inp label="Pieces *" type="number" placeholder="1000" value={nl.pieces} onChange={e=>setNl(p=>({...p,pieces:e.target.value}))} />
@@ -1238,7 +1378,7 @@ export default function PuzzleSwap() {
               <BackBtn onClick={goBack} />
               <div style={{ background:"var(--warm-white)", borderRadius:14, border:"1px solid var(--ink-15)", overflow:"hidden", boxShadow:"0 20px 60px rgba(28,24,20,0.10)" }}>
                 <div style={{ position:"relative" }}>
-                  <PuzzleBox artIdx={sel.art||0} emoji={sel.image||"🧩"} size="lg" category={sel.category} />
+                  <PuzzleBox artIdx={sel.art||0} emoji={sel.image||"🧩"} size="lg" category={sel.category} photoUrl={sel.photo_url||""} />
                   <PieceCount pieces={sel.pieces} />
                   <button onClick={()=>handleToggleSave(sel.id)}
                     style={{ position:"absolute", top:14, left:14, background:"rgba(28,24,20,0.6)", backdropFilter:"blur(10px)", border:`1px solid ${isSave?"var(--amber)":"rgba(255,255,255,0.15)"}`, borderRadius:6, padding:"7px 13px", cursor:"pointer", fontSize:13, color:isSave?"var(--amber)":"rgba(255,255,255,0.8)", display:"flex", alignItems:"center", gap:5, fontFamily:"var(--sans)" }}>
@@ -1526,7 +1666,7 @@ export default function PuzzleSwap() {
                       onRead={()=>markRead(r.id)}
                       onAccept={()=>handleAccept(r.id)}
                       onDecline={()=>handleDecline(r.id)}
-                      onReply={(reply)=>handleReply(r.id, reply)}
+                      onOpenThread={(id)=>{ setOpenThread(id); markThreadRead(id); }}
                     />
                   ))}
                 </div>
@@ -1549,7 +1689,7 @@ export default function PuzzleSwap() {
                     const statusLabel = { accepted:"✓ Accepted", declined:"✕ Declined", pending:"● Pending", withdrawn:"— Withdrawn" }[r.status||"pending"];
                     return (
                       <div key={r.id} style={{ background:"var(--warm-white)", borderRadius:12, border:"1px solid var(--ink-08)", overflow:"hidden", boxShadow:"0 1px 4px rgba(26,21,16,0.05)" }}>
-                        <div style={{ padding:"16px 20px", borderBottom: r.seller_reply || r.status==="accepted" ? "1px solid var(--ink-08)" : "none" }}>
+                        <div style={{ padding:"16px 20px", borderBottom: r.status==="accepted" ? "1px solid var(--ink-08)" : "none" }}>
                           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12 }}>
                             <div>
                               <div style={{ fontSize:15, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:4 }}>
@@ -1586,21 +1726,14 @@ export default function PuzzleSwap() {
                           {r.message && <div style={{ fontSize:13, color:"var(--ink-70)", fontFamily:"var(--sans)", background:"var(--cream)", padding:"8px 12px", borderRadius:6, lineHeight:1.6, marginTop:10 }}>"{r.message}"</div>}
                         </div>
 
-                        {/* Seller reply */}
-                        {r.seller_reply && (
-                          <div style={{ padding:"12px 20px", background:"var(--sage-bg)" }}>
-                            <div style={{ fontSize:11, fontWeight:600, color:"var(--sage)", fontFamily:"var(--sans)", marginBottom:4, textTransform:"uppercase", letterSpacing:".5px" }}>Reply from seller</div>
-                            <div style={{ fontSize:13, color:"var(--ink-70)", fontFamily:"var(--sans)", lineHeight:1.6 }}>{r.seller_reply}</div>
-                          </div>
-                        )}
-
-                        {/* Accepted — show next steps */}
+                        {/* Accepted — show message button */}
                         {r.status === "accepted" && (
-                          <div style={{ padding:"12px 20px", background:"var(--sage-bg)", borderTop:"1px solid rgba(61,107,69,0.15)" }}>
-                            <div style={{ fontSize:12, fontWeight:600, color:"var(--sage)", fontFamily:"var(--sans)", marginBottom:3 }}>🎉 Your request was accepted!</div>
-                            <div style={{ fontSize:12, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>
-                              Check your email — the seller has your contact info and will reach out to coordinate the swap.
-                            </div>
+                          <div style={{ padding:"12px 20px", background:"var(--sage-bg)", borderTop:"1px solid rgba(61,107,69,0.15)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                            <div style={{ fontSize:12, fontWeight:600, color:"var(--sage)", fontFamily:"var(--sans)" }}>🎉 Request accepted!</div>
+                            <button onClick={()=>{ setOpenThread(r.id); markThreadRead(r.id); }}
+                              style={{ padding:"7px 16px", background:"var(--terracotta)", color:"white", border:"none", borderRadius:6, fontSize:12, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer" }}>
+                              💬 Messages
+                            </button>
                           </div>
                         )}
                       </div>
@@ -1623,7 +1756,7 @@ export default function PuzzleSwap() {
                   {myListings.map(p => {
                     return (
                       <div key={p.id} style={{ background:"var(--warm-white)", borderRadius:10, border:"1px solid var(--ink-15)", overflow:"hidden", boxShadow:"0 2px 8px rgba(28,24,20,0.05)" }}>
-                        <PuzzleBox artIdx={p.art||0} emoji={p.image||"🧩"} size="sm" category={p.category} />
+                        <PuzzleBox artIdx={p.art||0} emoji={p.image||"🧩"} size="sm" category={p.category} photoUrl={p.photo_url||""} />
                         <div style={{ padding:"12px 14px" }}>
                           <div style={{ fontSize:14, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:2 }}>{p.title}</div>
                           <div style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)", marginBottom:10 }}>{p.pieces.toLocaleString()} pcs · {timeAgo(p.created_at)}</div>
@@ -1730,6 +1863,18 @@ export default function PuzzleSwap() {
         <Modal onClose={()=>setReqModal(null)} wide>
           <RequestModal puzzle={reqModal} userOf={userOf} currentUser={currentUser} onClose={()=>setReqModal(null)} onSend={handleSendRequest} />
         </Modal>
+      )}
+
+      {/* ── MESSAGE THREAD ── */}
+      {openThread && (
+        <MessageThread
+          requestId={openThread}
+          currentUserId={currentUser?.id}
+          messages={threads[openThread] || []}
+          onSend={sendMessage}
+          onClose={()=>setOpenThread(null)}
+          request={[...requests, ...sentRequests].find(r => r.id === openThread)}
+        />
       )}
 
     </div>
