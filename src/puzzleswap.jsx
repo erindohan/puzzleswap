@@ -1556,10 +1556,10 @@ export default function PuzzleSwap() {
                             </div>
                             <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:8, flexShrink:0 }}>
                               <span style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>{timeAgo(r.created_at)}</span>
-                              {r.status === "pending" && (
+                              {r.status !== "declined" && (
                                 <button onClick={()=>handleCancelRequest(r.id)}
                                   style={{ fontSize:11, color:"var(--terracotta)", background:"none", border:"1px solid var(--terracotta)", borderRadius:5, padding:"4px 10px", cursor:"pointer", fontFamily:"var(--sans)", fontWeight:600 }}>
-                                  Cancel
+                                  {r.status === "accepted" ? "Withdraw" : "Cancel"}
                                 </button>
                               )}
                             </div>
