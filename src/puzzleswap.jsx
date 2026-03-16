@@ -153,8 +153,8 @@ const initStyles = () => {
     /* Mobile bottom nav */
     .mobile-nav {
       position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--ink);
-      border-top: 1px solid rgba(255,255,255,0.08);
+      background: #8A4A42;
+      border-top: 1px solid rgba(0,0,0,0.10);
       display: none;
       z-index: 300;
       padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -582,9 +582,9 @@ function HowItWorks() {
   return (
     <div style={{ borderRadius:16, overflow:"hidden", marginBottom:40, border:"1px solid var(--ink-08)", boxShadow:"0 4px 20px rgba(28,18,8,0.06)" }}>
       {/* Header band */}
-      <div style={{ background:"#2C1F0E", padding:"14px 28px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div style={{ fontSize:10, fontWeight:500, color:"rgba(255,255,255,0.55)", textTransform:"uppercase", letterSpacing:"2.5px", fontFamily:"var(--sans)" }}>How it works</div>
-        <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)", fontFamily:"var(--sans)", fontWeight:300 }}>No fees. No platform cuts. Just puzzles finding new homes.</div>
+      <div style={{ background:"#8A4A42", padding:"14px 28px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ fontSize:10, fontWeight:500, color:"rgba(255,255,255,0.70)", textTransform:"uppercase", letterSpacing:"2.5px", fontFamily:"var(--sans)" }}>How it works</div>
+        <div style={{ fontSize:11, color:"rgba(255,255,255,0.45)", fontFamily:"var(--sans)", fontWeight:300 }}>No fees. No platform cuts. Just puzzles finding new homes.</div>
       </div>
       {/* Cards row */}
       <div className="how-grid" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", background:"var(--warm-white)" }}>
@@ -1231,7 +1231,7 @@ export default function PuzzleSwap() {
     <div style={{ minHeight:"100vh", background:"var(--warm-white)" }}>
 
       {/* ── HEADER ── */}
-      <header style={{ background:"#2C1F0E", borderBottom:"1px solid rgba(255,255,255,0.06)", position:"sticky", top:0, zIndex:200 }}>
+      <header style={{ background:"#8A4A42", borderBottom:"1px solid rgba(0,0,0,0.10)", position:"sticky", top:0, zIndex:200 }}>
         <div style={{ maxWidth:1160, margin:"0 auto", padding:"0 20px", height:58, display:"grid", gridTemplateColumns:"auto 1fr auto", alignItems:"center", gap:12 }}>
 
           {/* LEFT — logo */}
@@ -1529,36 +1529,36 @@ export default function PuzzleSwap() {
             {/* Hero */}
             <div className="hero-grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", borderRadius:16, overflow:"hidden", marginBottom:40, boxShadow:"0 8px 40px rgba(44,31,14,0.12)", border:"1px solid var(--ink-08)", position:"relative" }}>
               {/* Left: deep warm brown — editorial, sophisticated */}
-              <div style={{ padding:"52px 48px", display:"flex", flexDirection:"column", justifyContent:"center", background:"#2C1F0E", position:"relative", overflow:"hidden", minHeight:340 }}>
+              <div style={{ padding:"52px 48px", display:"flex", flexDirection:"column", justifyContent:"center", background:"#8A4A42", position:"relative", overflow:"hidden", minHeight:340 }}>
                 {/* Subtle botanical texture */}
-                <div style={{ position:"absolute", top:-30, right:-30, width:200, height:200, borderRadius:"50%", background:"rgba(168,92,82,0.08)", pointerEvents:"none" }} />
-                <div style={{ position:"absolute", bottom:-20, left:-20, width:140, height:140, borderRadius:"50%", background:"rgba(74,112,85,0.06)", pointerEvents:"none" }} />
-                <PuzzlePieceDecor size={48} color="white" opacity={0.04} style={{ position:"absolute", top:28, right:36, transform:"rotate(20deg)" }} />
-                <PuzzlePieceDecor size={28} color="white" opacity={0.03} style={{ position:"absolute", bottom:40, right:80, transform:"rotate(-12deg)" }} />
+                <div style={{ position:"absolute", top:-30, right:-30, width:200, height:200, borderRadius:"50%", background:"rgba(255,255,255,0.06)", pointerEvents:"none" }} />
+                <div style={{ position:"absolute", bottom:-20, left:-20, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }} />
+                <PuzzlePieceDecor size={48} color="white" opacity={0.08} style={{ position:"absolute", top:28, right:36, transform:"rotate(20deg)" }} />
+                <PuzzlePieceDecor size={28} color="white" opacity={0.05} style={{ position:"absolute", bottom:40, right:80, transform:"rotate(-12deg)" }} />
 
-                <div style={{ display:"inline-flex", alignItems:"center", gap:6, background:"rgba(168,92,82,0.15)", border:"1px solid rgba(168,92,82,0.20)", borderRadius:2, padding:"4px 12px", fontSize:10, color:"rgba(194,112,104,0.90)", fontWeight:500, letterSpacing:"2px", marginBottom:24, alignSelf:"flex-start", textTransform:"uppercase", fontFamily:"var(--sans)" }}>
+                <div style={{ display:"inline-flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.18)", borderRadius:2, padding:"4px 12px", fontSize:10, color:"rgba(255,255,255,0.80)", fontWeight:500, letterSpacing:"2px", marginBottom:24, alignSelf:"flex-start", textTransform:"uppercase", fontFamily:"var(--sans)" }}>
                   Free Puzzle Trading
                 </div>
                 <h1 style={{ fontSize:44, fontFamily:"var(--serif)", color:"white", lineHeight:1.08, marginBottom:18, fontWeight:400, fontStyle:"italic" }}>
-                  Done with it?<br /><span style={{ color:"#C27068", fontStyle:"normal" }}>Pass it on.</span>
+                  Done with it?<br /><span style={{ color:"rgba(255,220,210,0.95)", fontStyle:"normal" }}>Pass it on.</span>
                 </h1>
-                <p style={{ fontSize:14, color:"rgba(255,255,255,0.48)", fontFamily:"var(--sans)", lineHeight:1.75, marginBottom:32, maxWidth:300, fontWeight:300 }}>
+                <p style={{ fontSize:14, color:"rgba(255,255,255,0.65)", fontFamily:"var(--sans)", lineHeight:1.75, marginBottom:32, maxWidth:300, fontWeight:300 }}>
                   Trade completed puzzles with people who'll actually do them. Swap, gift, or sell — local meetup or shipped nationwide.
                 </p>
                 {!currentUser ? (
                   <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
                     <button className="ps-btn-primary" onClick={()=>{setAuthTab("signup");setShowAuth(true);}}
-                      style={{ padding:"12px 26px", background:"var(--terracotta)", color:"white", border:"none", borderRadius:4, fontSize:14, fontFamily:"var(--sans)", fontWeight:500, cursor:"pointer", letterSpacing:"0.2px" }}>
+                      style={{ padding:"12px 26px", background:"white", color:"#8A4A42", border:"none", borderRadius:4, fontSize:14, fontFamily:"var(--sans)", fontWeight:500, cursor:"pointer", letterSpacing:"0.2px" }}>
                       Start swapping
                     </button>
                     <button onClick={()=>{setAuthTab("login");setShowAuth(true);}}
-                      style={{ padding:"12px 20px", background:"transparent", color:"rgba(255,255,255,0.50)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:4, fontSize:14, fontFamily:"var(--sans)", fontWeight:400, cursor:"pointer" }}>
+                      style={{ padding:"12px 20px", background:"transparent", color:"rgba(255,255,255,0.65)", border:"1px solid rgba(255,255,255,0.20)", borderRadius:4, fontSize:14, fontFamily:"var(--sans)", fontWeight:400, cursor:"pointer" }}>
                       Log in
                     </button>
                   </div>
                 ) : (
                   <button className="ps-btn-primary" onClick={()=>setShowList(true)}
-                    style={{ alignSelf:"flex-start", padding:"12px 26px", background:"var(--terracotta)", color:"white", border:"none", borderRadius:4, fontSize:14, fontFamily:"var(--sans)", fontWeight:500, cursor:"pointer" }}>
+                    style={{ alignSelf:"flex-start", padding:"12px 26px", background:"white", color:"#8A4A42", border:"none", borderRadius:4, fontSize:14, fontFamily:"var(--sans)", fontWeight:500, cursor:"pointer" }}>
                     + List a puzzle
                   </button>
                 )}
