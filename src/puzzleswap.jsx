@@ -233,11 +233,11 @@ const SEED_PUZZLES = [
   { id:"p13", userId:"u1", title:"Christmas Morning",       brand:"Buffalo Games",   pieces:1000, condition:"Like New",  listingType:"swap",   category:"Seasonal",   description:"Cozy fireplace, wrapped gifts, snowy window. A holiday tradition. All pieces present.", art:2, saves:14, posted:"2d ago",  boostExpiry: null, image:"🎄" },
 ];
 
-const CATEGORIES = ["All", "Collage", "Landscape", "Nightscape", "Animals", "Fine Art", "Travel", "Seasonal"];
+const CATEGORIES = ["All", "Collage", "Landscape", "Nightscape", "Animals", "Fine Art", "Travel", "Seasonal", "Food", "Other"];
 const CONDITIONS  = ["Like New","Excellent","Good","Fair"];
 const TRADE_OPTS  = ["Local","Will Ship","Both"];
 const CAT_OPT     = CATEGORIES.filter(c => c !== "All");
-const EMOJIS = ["🏔️","🌊","🌸","🌆","🗺️","🌌","🦁","🐬","🌻","🦋","🚂","🏡","🎨","🌍","🗼","🏰","🌹","🦊","🎲","🐶","🐱","🦅","🏛️","🎠","🍭","🥣","📚","🎸","⚽"];
+const EMOJIS = ["🏔️","🌊","🌸","🌆","🗺️","🌌","🦁","🐬","🌻","🦋","🚂","🏡","🎨","🌍","🗼","🏰","🌹","🦊","🎲","🐶","🐱","🦅","🏛️","🎠","🍭","🥣","📚","🎸","⚽","🍰","🧁","🍕","🌮","🍜","🍓","🎄","🌾","🎃"];
 const AFFILIATE_TAG      = "puzzleswap-20";
 const PIRATESHIP_REF_URL = "https://www.pirateship.com?ref=puzzleswap";
 const BOOST_PRICE = "$1.99";
@@ -863,9 +863,9 @@ export default function PuzzleSwap() {
               </div>
             </div>
 
-            {/* Emoji */}
+            {/* Card icon */}
             <div style={{ marginBottom:18 }}>
-              <div style={{ fontSize:11, fontWeight:600, color:"var(--ink-70)", textTransform:"uppercase", letterSpacing:".8px", marginBottom:8 }}>Pick a subject</div>
+              <div style={{ fontSize:11, fontWeight:600, color:"var(--ink-70)", textTransform:"uppercase", letterSpacing:".8px", marginBottom:8 }}>Card icon — choose one that matches your puzzle</div>
               <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
                 {EMOJIS.map(e=>(
                   <button key={e} onClick={()=>setNl(p=>({...p,image:e}))}
@@ -880,13 +880,15 @@ export default function PuzzleSwap() {
               <Inp label="Brand" placeholder="e.g. Ravensburger" value={nl.brand} onChange={e=>setNl(p=>({...p,brand:e.target.value}))} />
               <Sel label="Category" value={nl.category} onChange={e=>setNl(p=>({...p,category:e.target.value}))}>
                 {[
-                  ["Collage",   "🎲 Collage — games, wrappers, album covers, posters"],
-                  ["Landscape", "🌄 Landscape — mountains, valleys, forests, countryside"],
-                  ["Nightscape","🌃 Nightscape — city lights, starry skies, moonlit water"],
-                  ["Animals",   "🦁 Animals — wildlife, pets, birds, ocean life"],
-                  ["Fine Art",  "🖼️ Fine Art — paintings, Van Gogh, Monet, masterpieces"],
-                  ["Travel",    "✈️ Travel — villages, landmarks, destinations"],
-                  ["Seasonal",  "🍂 Seasonal — Christmas, autumn, spring, summer"],
+                  ["Collage",    "🎲 Collage — games, wrappers, posters, chapsticks…"],
+                  ["Landscape",  "🌄 Landscape — mountains, valleys, forests"],
+                  ["Nightscape", "🌃 Nightscape — city lights, starry skies"],
+                  ["Animals",    "🦁 Animals — wildlife, pets, birds"],
+                  ["Fine Art",   "🖼️ Fine Art — Van Gogh, Monet, masterpieces"],
+                  ["Travel",     "✈️ Travel — landmarks, villages, destinations"],
+                  ["Food",       "🍰 Food — cakes, candy, farmers markets, kitchens"],
+                  ["Seasonal",   "🍂 Seasonal — Christmas, autumn, spring, summer"],
+                  ["Other",      "🧩 Other — doesn't fit anywhere else"],
                 ].map(([v,l])=><option key={v} value={v}>{l}</option>)}
               </Sel>
               <Sel label="Condition" value={nl.condition} onChange={e=>setNl(p=>({...p,condition:e.target.value}))}>{CONDITIONS.map(c=><option key={c}>{c}</option>)}</Sel>
@@ -1099,14 +1101,16 @@ export default function PuzzleSwap() {
               <div style={{ overflowX:"auto", paddingBottom:2 }}>
                 <div style={{ display:"flex", gap:8, minWidth:"max-content" }}>
                   {[
-                    ["All",        "All",       ""],
-                    ["Collage",    "Collage",   "🎲"],
-                    ["Landscape",  "Landscape", "🌄"],
-                    ["Nightscape", "Nightscape","🌃"],
-                    ["Animals",    "Animals",   "🦁"],
-                    ["Fine Art",   "Fine Art",  "🖼️"],
-                    ["Travel",     "Travel",    "✈️"],
-                    ["Seasonal",   "Seasonal",  "🍂"],
+                    ["All",        "All",        ""],
+                    ["Collage",    "Collage",    "🎲"],
+                    ["Landscape",  "Landscape",  "🌄"],
+                    ["Nightscape", "Nightscape", "🌃"],
+                    ["Animals",    "Animals",    "🦁"],
+                    ["Fine Art",   "Fine Art",   "🖼️"],
+                    ["Travel",     "Travel",     "✈️"],
+                    ["Food",       "Food",       "🍰"],
+                    ["Seasonal",   "Seasonal",   "🍂"],
+                    ["Other",      "Other",      "🧩"],
                   ].map(([v, label, icon]) => {
                     const active = catF === v;
                     return (
@@ -1157,6 +1161,8 @@ export default function PuzzleSwap() {
                 "Fine Art":   { icon:"🖼️", title:"Fine Art puzzles",   desc:"Paintings, illustration, masterpieces — Van Gogh, Monet, Klimt and more. Subtle color gradients make these genuinely challenging." },
                 "Travel":     { icon:"✈️", title:"Travel puzzles",     desc:"Villages, landmarks, destinations from around the world. Cobblestone streets, terracotta rooftops, iconic skylines." },
                 "Seasonal":   { icon:"🍂", title:"Seasonal puzzles",   desc:"Christmas mornings, autumn harvests, spring blooms, summer cottages. Cozy, nostalgic, perfect for gifting." },
+                "Food":       { icon:"🍰", title:"Food puzzles",       desc:"Cakes, candy, farmers markets, kitchen scenes, bakeries. Colorful and satisfying — great for foodies." },
+                "Other":      { icon:"🧩", title:"Other puzzles",      desc:"Doesn't fit neatly into another category — abstract, architectural, pop culture, and everything else." },
               };
               const m = CAT_META[catF];
               if (!m) return null;
