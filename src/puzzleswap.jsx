@@ -233,6 +233,19 @@ const daysLeft   = p => Math.ceil((p.boost_expiry - Date.now()) / 864e5);
 const affUrl     = p => `https://www.amazon.com/s?k=${encodeURIComponent(`${p.brand} ${p.title} puzzle ${p.pieces} pieces`)}&tag=${AFFILIATE_TAG}`;
 const needsShip  = lt => lt === "swap" || lt === "offer" || lt === "free";
 
+const timeAgo = dateStr => {
+  if (!dateStr) return "Recently";
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins  = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days  = Math.floor(diff / 86400000);
+  if (mins < 2)   return "Just now";
+  if (mins < 60)  return `${mins}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7)   return `${days}d ago`;
+  return `${Math.floor(days/7)}wk ago`;
+};
+
 // ─── Small reusable components ────────────────────────────────────────────────
 function Avatar({ user, size = 40 }) {
   const colors = ["#C4603A","#5A7A5C","#4A6FA5","#8B7355","#B8860B"];
@@ -518,17 +531,11 @@ function BoostModal({ puzzle, onClose, onBoost }) {
 
 // ─── Puzzle Card ──────────────────────────────────────────────────────────────
 function PuzzleCard({ puzzle, onOpen, onRequest, saved, onToggleSave, animClass = "" }) {
-  const boosted = isBoosted(puzzle);
   const lt = LISTING_TYPES[puzzle.listing_type] || LISTING_TYPES.offer;
   return (
     <div className={`ps-card ${animClass}`}
-      style={{ background:"var(--warm-white)", borderRadius:10, border:`1px solid ${boosted?"var(--amber)":"var(--ink-15)"}`, overflow:"visible", boxShadow: boosted ? "0 4px 24px rgba(176,107,16,0.20)" : "0 2px 12px rgba(26,21,16,0.06)", position:"relative" }}
+      style={{ background:"var(--warm-white)", borderRadius:10, border:"1px solid var(--ink-15)", overflow:"visible", boxShadow:"0 2px 12px rgba(26,21,16,0.06)", position:"relative" }}
       onClick={()=>onOpen(puzzle)}>
-      {boosted && (
-        <div className="crown-anim" style={{ position:"absolute", top:-11, left:"50%", transform:"translateX(-50%)", background:"var(--amber)", borderRadius:99, padding:"2px 10px", fontSize:10, fontWeight:700, color:"white", fontFamily:"var(--sans)", whiteSpace:"nowrap", boxShadow:"0 2px 10px rgba(176,107,16,0.4)", zIndex:10, letterSpacing:"0.3px" }}>
-          👑 FEATURED
-        </div>
-      )}
       <div style={{ borderRadius:10, overflow:"hidden" }}>
         {/* Art */}
         <div style={{ position:"relative" }}>
@@ -623,7 +630,6 @@ export default function PuzzleSwap() {
   const [searchQ, setSearchQ]       = useState("");
   const [savedList, setSaved]       = useState([]);
   const [reqModal, setReqModal]     = useState(null);
-  const [boostModal, setBoostModal] = useState(null);
   const [aEmail, setAEmail]         = useState("");
   const [aPass, setAPass]           = useState("");
   const [aName, setAName]           = useState("");
@@ -763,13 +769,6 @@ export default function PuzzleSwap() {
     }
   };
 
-  // ─── Boosts ──────────────────────────────────────────────────────────────────
-  const applyBoost = async (puzzleId) => {
-    const expiry = Date.now() + BOOST_MS;
-    await sb.from("puzzles").update({ boost_expiry: expiry }).eq("id", puzzleId);
-    await loadPuzzles();
-  };
-
   // ─── Profile save ─────────────────────────────────────────────────────────────
   const saveProfile = async () => {
     if (!profEdit) return;
@@ -782,19 +781,6 @@ export default function PuzzleSwap() {
 
   // ─── Derived lists ────────────────────────────────────────────────────────────
   const userOf = p => p._owner || null;
-
-  const timeAgo = dateStr => {
-    if (!dateStr) return "Recently";
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-    if (mins < 2)   return "Just now";
-    if (mins < 60)  return `${mins}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days < 7)   return `${days}d ago`;
-    return `${Math.floor(days/7)}wk ago`;
-  };
 
   const matchPiece = p => {
     if (pieceF === "Any")    return true;
@@ -1031,18 +1017,11 @@ export default function PuzzleSwap() {
         {!showList && sel && (() => {
           const owner   = userOf(sel);
           const lt      = LISTING_TYPES[sel.listing_type] || LISTING_TYPES.offer;
-          const boosted = isBoosted(sel);
           const isSave  = savedList.includes(sel.id);
           return (
             <div style={{ maxWidth:680 }}>
               <BackBtn onClick={goBack} />
-              <div style={{ background:"var(--warm-white)", borderRadius:14, border:`1px solid ${boosted?"var(--amber)":"var(--ink-15)"}`, overflow:"hidden", boxShadow:"0 20px 60px rgba(28,24,20,0.10)" }}>
-                {boosted && (
-                  <div style={{ background:"var(--amber-dim)", borderBottom:"1px solid rgba(176,107,16,0.2)", padding:"8px 24px", display:"flex", alignItems:"center", gap:8 }}>
-                    <span>👑</span>
-                    <span style={{ fontSize:12, fontWeight:600, color:"var(--amber)", fontFamily:"var(--sans)" }}>Featured listing · {daysLeft(sel)} days remaining</span>
-                  </div>
-                )}
+              <div style={{ background:"var(--warm-white)", borderRadius:14, border:"1px solid var(--ink-15)", overflow:"hidden", boxShadow:"0 20px 60px rgba(28,24,20,0.10)" }}>
                 <div style={{ position:"relative" }}>
                   <PuzzleBox artIdx={sel.art||0} emoji={sel.image||"🧩"} size="lg" category={sel.category} />
                   <PieceCount pieces={sel.pieces} />
@@ -1298,7 +1277,6 @@ export default function PuzzleSwap() {
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:22 }}>
               <div style={{ fontSize:13, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>
                 <span style={{ color:"var(--ink)", fontFamily:"var(--serif)" }}>{filtered.length}</span> {filtered.length===1?"puzzle":"puzzles"} available
-                {filtered.some(isBoosted) && <span style={{ marginLeft:8, color:"var(--amber)", fontSize:11 }}>· 👑 featured listings first</span>}
               </div>
             </div>
 
@@ -1329,15 +1307,8 @@ export default function PuzzleSwap() {
               : (
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))", gap:18 }}>
                   {myListings.map(p => {
-                    const boosted = isBoosted(p);
                     return (
-                      <div key={p.id} style={{ background:"var(--warm-white)", borderRadius:10, border:`1px solid ${boosted?"var(--amber)":"var(--ink-15)"}`, overflow:"hidden", boxShadow:boosted?"0 4px 20px rgba(176,107,16,0.15)":"0 2px 8px rgba(28,24,20,0.05)" }}>
-                        {boosted && (
-                          <div style={{ background:"var(--amber-dim)", padding:"6px 14px", display:"flex", alignItems:"center", gap:6, borderBottom:"1px solid rgba(176,107,16,0.15)" }}>
-                            <span>👑</span>
-                            <span style={{ fontSize:11, fontWeight:600, color:"var(--amber)", fontFamily:"var(--sans)" }}>Featured · {daysLeft(p)}d left</span>
-                          </div>
-                        )}
+                      <div key={p.id} style={{ background:"var(--warm-white)", borderRadius:10, border:"1px solid var(--ink-15)", overflow:"hidden", boxShadow:"0 2px 8px rgba(28,24,20,0.05)" }}>
                         <PuzzleBox artIdx={p.art||0} emoji={p.image||"🧩"} size="sm" category={p.category} />
                         <div style={{ padding:"12px 14px" }}>
                           <div style={{ fontSize:14, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:2 }}>{p.title}</div>
@@ -1346,12 +1317,8 @@ export default function PuzzleSwap() {
                             <CondBadge cond={p.condition} />
                             <LTBadge type={p.listing_type} />
                           </div>
-                          <div style={{ paddingTop:10, borderTop:"1px solid var(--ink-08)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                            <button onClick={()=>handleRemoveListing(p.id)} style={{ background:"none", border:"none", cursor:"pointer", fontSize:12, color:"var(--terracotta)", fontFamily:"var(--sans)" }}>Remove</button>
-                            {!boosted
-                              ? <button className="ps-btn-ghost" onClick={()=>setBoostModal(p)} style={{ display:"flex", alignItems:"center", gap:4, padding:"5px 12px", background:"none", color:"var(--ink-70)", border:"1px solid var(--ink-15)", borderRadius:5, fontSize:11, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer" }}>👑 Boost · {BOOST_PRICE}</button>
-                              : <span style={{ fontSize:11, color:"var(--amber)", fontFamily:"var(--sans)" }}>✓ Active</span>
-                            }
+                          <div style={{ paddingTop:10, borderTop:"1px solid var(--ink-08)", display:"flex", alignItems:"center" }}>
+                            <button onClick={()=>handleRemoveListing(p.id)} style={{ background:"none", border:"none", cursor:"pointer", fontSize:12, color:"var(--terracotta)", fontFamily:"var(--sans)" }}>Remove listing</button>
                           </div>
                         </div>
                       </div>
@@ -1451,12 +1418,6 @@ export default function PuzzleSwap() {
         </Modal>
       )}
 
-      {/* ── BOOST MODAL ── */}
-      {boostModal && (
-        <Modal onClose={()=>setBoostModal(null)}>
-          <BoostModal puzzle={boostModal} onClose={()=>setBoostModal(null)} onBoost={applyBoost} />
-        </Modal>
-      )}
     </div>
   );
 }
