@@ -217,27 +217,6 @@ const condMeta = {
   "Fair":      { color: "var(--terracotta)",   bg: "var(--terracotta-bg)" },
 };
 
-const SEED_USERS = {
-  "sarah@example.com": { id:"u1", name:"Sarah M.", email:"sarah@example.com", password:"demo", location:"Elmhurst, IL", tradeCount:12, memberSince:"Jan 2024", bio:"Landscape and impressionist puzzles only — the harder the better." },
-  "tom@example.com":   { id:"u2", name:"Tom K.",   email:"tom@example.com",   password:"demo", location:"Oak Park, IL", tradeCount:4,  memberSince:"Mar 2024", bio:"" },
-};
-
-
-const SEED_PUZZLES = [
-  { id:"p1",  userId:"u1", title:"Vintage Board Games",     brand:"White Mountain",  pieces:1000, condition:"Like New",  listingType:"swap",   category:"Collage",    description:"Dozens of classic games packed into one — Clue, Sorry, Twister, Risk and more. All pieces verified.", art:6, saves:27, posted:"1d ago",  boostExpiry: Date.now()+5*864e5, image:"🎲" },
-  { id:"p2",  userId:"u2", title:"Retro Candy Labels",      brand:"White Mountain",  pieces:1000, condition:"Excellent", listingType:"offer",  category:"Collage",    description:"Wall-to-wall vintage candy wrappers — 80+ brands, pure nostalgia.", art:9, saves:19, posted:"2d ago",  boostExpiry: null, image:"🍭" },
-  { id:"p3",  userId:"u1", title:"Classic Album Covers",    brand:"White Mountain",  pieces:1000, condition:"Good",      listingType:"free",   category:"Collage",    description:"Rock and pop classics wall to wall. Every inch has something to find. Just cover shipping.", art:3, saves:33, posted:"4d ago",  boostExpiry: null, image:"🎸" },
-  { id:"p4",  userId:"u2", title:"Autumn Valley",           brand:"Vermont Country", pieces:1000, condition:"Like New",  listingType:"swap",   category:"Landscape",  description:"Peak fall color across rolling hills, misty morning light. One of the best I've done.", art:1, saves:8,  posted:"6d ago",  boostExpiry: null, image:"🍂" },
-  { id:"p5",  userId:"u1", title:"Scottish Highlands",      brand:"Ravensburger",    pieces:1500, condition:"Excellent", listingType:"offer",  category:"Landscape",  description:"Sweeping glens, dramatic skies, heather-covered hillsides. Open to offers.", art:4, saves:12, posted:"3d ago",  boostExpiry: null, image:"🏔️" },
-  { id:"p6",  userId:"u2", title:"City Lights Panorama",    brand:"Clementoni",      pieces:1000, condition:"Excellent", listingType:"swap",   category:"Nightscape", description:"Glittering downtown reflections on water. Completed twice. Open to swap + small top-up.", art:0, saves:18, posted:"4d ago",  boostExpiry: Date.now()+2*864e5, image:"🌆" },
-  { id:"p7",  userId:"u1", title:"Starry Night Over Water", brand:"Eurographics",    pieces:1500, condition:"Like New",  listingType:"offer",  category:"Nightscape", description:"Deep indigo sky, moonlit reflections, Van Gogh swirls. Stunning. Open to offers.", art:6, saves:31, posted:"1wk ago", boostExpiry: null, image:"🌌" },
-  { id:"p8",  userId:"u2", title:"African Wildlife",        brand:"Ravensburger",    pieces:1500, condition:"Excellent", listingType:"offer",  category:"Animals",    description:"Lions, elephants, giraffes across a golden savanna. Stunning photography.", art:5, saves:15, posted:"2d ago",  boostExpiry: null, image:"🦁" },
-  { id:"p9",  userId:"u1", title:"Cottage Garden Cats",     brand:"Cobble Hill",     pieces:500,  condition:"Good",      listingType:"free",   category:"Animals",    description:"Fluffy cats among summer flowers. Easy and relaxing. Box worn, all pieces there.", art:2, saves:11, posted:"3d ago",  boostExpiry: null, image:"🐱" },
-  { id:"p10", userId:"u2", title:"Monet's Water Lilies",    brand:"Cobble Hill",     pieces:750,  condition:"Like New",  listingType:"pickup", category:"Fine Art",   description:"Serene Impressionist masterpiece. Barely touched the table. Free local pickup Elmhurst.", art:1, saves:22, posted:"Today",   boostExpiry: null, image:"🌸" },
-  { id:"p11", userId:"u1", title:"Van Gogh Sunflowers",     brand:"Eurographics",    pieces:1000, condition:"Excellent", listingType:"swap",   category:"Fine Art",   description:"Bold yellows and golds. Easier than Starry Night — great intro to fine art puzzles.", art:7, saves:16, posted:"5d ago",  boostExpiry: null, image:"🌻" },
-  { id:"p12", userId:"u2", title:"Tuscan Hilltop Village",  brand:"Schmidt",         pieces:1500, condition:"Good",      listingType:"offer",  category:"Travel",     description:"Cobblestone alleys, terracotta rooftops, cypress trees. Charming and tricky.", art:4, saves:9,  posted:"5d ago",  boostExpiry: null, image:"🏘️" },
-  { id:"p13", userId:"u1", title:"Christmas Morning",       brand:"Buffalo Games",   pieces:1000, condition:"Like New",  listingType:"swap",   category:"Seasonal",   description:"Cozy fireplace, wrapped gifts, snowy window. A holiday tradition. All pieces present.", art:2, saves:14, posted:"2d ago",  boostExpiry: null, image:"🎄" },
-];
 
 const CATEGORIES = ["All", "Collage", "Landscape", "Nightscape", "Animals", "Fine Art", "Travel", "Seasonal", "Food", "Other"];
 const CONDITIONS  = ["Like New","Excellent","Good","Fair"];
@@ -575,7 +554,7 @@ function PuzzleCard({ puzzle, onOpen, onRequest, saved, onToggleSave, animClass 
           </div>
 
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:11, borderTop:"1px solid var(--ink-08)" }}>
-            <span style={{ fontSize:10, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>♥ {puzzle.saves} · {puzzle.posted}</span>
+            <span style={{ fontSize:10, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>♥ {puzzle.saves} · {timeAgo(puzzle.created_at)}</span>
             <button className="card-action" style={{ padding:"7px 14px", background:"var(--parchment)", color:"var(--ink)", border:"none", borderRadius:4, fontSize:11, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer", transition:"all .2s" }}
               onClick={e=>{ e.stopPropagation(); onRequest(puzzle); }}>
               {puzzle.listing_type === "free" || puzzle.listing_type === "pickup" ? "Claim" : "Request"} →
@@ -674,6 +653,13 @@ export default function PuzzleSwap() {
     if (data) {
       setCU(data);
       loadSaved(userId);
+    } else {
+      // Profile row missing — create a minimal one so user isn't locked out
+      const { data: authUser } = await sb.auth.getUser();
+      const email = authUser?.user?.email || "";
+      const fallback = { id: userId, email, name: email.split("@")[0], location: "", trade_preference: "Both", trade_count: 0, member_since: new Date().toLocaleString("default",{month:"short",year:"numeric"}), bio: "" };
+      await sb.from("profiles").upsert(fallback);
+      setCU(fallback);
     }
   };
 
@@ -715,6 +701,8 @@ export default function PuzzleSwap() {
 
   const handleSignup = async () => {
     if (!aName || !aEmail || !aPass) { setAErr("All starred fields are required."); return; }
+    if (!aEmail.includes("@") || !aEmail.includes(".")) { setAErr("Please enter a valid email address."); return; }
+    if (aPass.length < 6) { setAErr("Password must be at least 6 characters."); return; }
     const { data, error } = await sb.auth.signUp({ email: aEmail, password: aPass });
     if (error) { setAErr(error.message); return; }
     if (data.user) {
@@ -792,11 +780,22 @@ export default function PuzzleSwap() {
 
   const handleReq = p => { if (!currentUser) { setAuthTab("signup"); setShowAuth(true); } else setReqModal(p); };
 
-  const isBrowse = view==="browse" && !sel && !showList && !viewProfile;
-  const isSaved  = view==="saved"  && !sel && !viewProfile;
-  const isMyList = view==="mylistings" && !showList;
-
   // ─── Derived lists ────────────────────────────────────────────────────────────
+  const userOf = p => p._owner || null;
+
+  const timeAgo = dateStr => {
+    if (!dateStr) return "Recently";
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    if (mins < 2)   return "Just now";
+    if (mins < 60)  return `${mins}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7)   return `${days}d ago`;
+    return `${Math.floor(days/7)}wk ago`;
+  };
+
   const matchPiece = p => {
     if (pieceF === "Any")    return true;
     if (pieceF === "<500")   return p.pieces < 500;
@@ -805,17 +804,24 @@ export default function PuzzleSwap() {
     if (pieceF === "2k+")    return p.pieces > 2000;
     return true;
   };
+
   const sortB = arr => [...arr.filter(isBoosted), ...arr.filter(p => !isBoosted(p))];
+
+  // Show all puzzles on browse — hide own only when logged in AND there are other users' puzzles
   const filtered = sortB(puzzles.filter(p => {
-    if (currentUser && p.user_id === currentUser.id) return false;
     if (catF !== "All" && p.category !== catF) return false;
     if (typeF !== "All" && p.listing_type !== typeF) return false;
     if (!p.title.toLowerCase().includes(searchQ.toLowerCase())) return false;
     return matchPiece(p);
   }));
+
   const myListings = puzzles.filter(p => currentUser && p.user_id === currentUser.id);
   const goBack = () => { setSel(null); setViewProf(null); setShowList(false); };
   const nav    = v  => { setView(v); goBack(); };
+
+  const isBrowse = view==="browse" && !sel && !showList && !viewProfile;
+  const isSaved  = view==="saved"  && !sel && !viewProfile;
+  const isMyList = view==="mylistings" && !showList;
 
   // Filter pill
   const FPill = ({label, active, onClick}) => (
@@ -1040,7 +1046,7 @@ export default function PuzzleSwap() {
                 <div style={{ position:"relative" }}>
                   <PuzzleBox artIdx={sel.art||0} emoji={sel.image||"🧩"} size="lg" category={sel.category} />
                   <PieceCount pieces={sel.pieces} />
-                  <button onClick={()=>setSaved(s=>s.includes(sel.id)?s.filter(x=>x!==sel.id):[...s,sel.id])}
+                  <button onClick={()=>handleToggleSave(sel.id)}
                     style={{ position:"absolute", top:14, left:14, background:"rgba(28,24,20,0.6)", backdropFilter:"blur(10px)", border:`1px solid ${isSave?"var(--amber)":"rgba(255,255,255,0.15)"}`, borderRadius:6, padding:"7px 13px", cursor:"pointer", fontSize:13, color:isSave?"var(--amber)":"rgba(255,255,255,0.8)", display:"flex", alignItems:"center", gap:5, fontFamily:"var(--sans)" }}>
                     {isSave?"♥":"♡"} {sel.saves+(isSave?1:0)}
                   </button>
@@ -1335,7 +1341,7 @@ export default function PuzzleSwap() {
                         <PuzzleBox artIdx={p.art||0} emoji={p.image||"🧩"} size="sm" category={p.category} />
                         <div style={{ padding:"12px 14px" }}>
                           <div style={{ fontSize:14, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:2 }}>{p.title}</div>
-                          <div style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)", marginBottom:10 }}>{p.pieces.toLocaleString()} pcs · {p.posted}</div>
+                          <div style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)", marginBottom:10 }}>{p.pieces.toLocaleString()} pcs · {timeAgo(p.created_at)}</div>
                           <div style={{ display:"flex", gap:5, marginBottom:12, flexWrap:"wrap" }}>
                             <CondBadge cond={p.condition} />
                             <LTBadge type={p.listing_type} />
