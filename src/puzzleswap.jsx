@@ -1,4 +1,10 @@
 import { useState, useEffect, useRef } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+// ─── Supabase client ──────────────────────────────────────────────────────────
+const SUPABASE_URL = "https://mhshkqffsmppzgbilukw.supabase.co";
+const SUPABASE_KEY = "sb_publishable_O_tzl7RGzFYBrEsjLmUJFQ_9GI-Dngd";
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ─── Fonts ─────────────────────────────────────────────────────────────────
 const initStyles = () => {
@@ -243,8 +249,8 @@ const PIRATESHIP_REF_URL = "https://www.pirateship.com?ref=puzzleswap";
 const BOOST_PRICE = "$1.99";
 const BOOST_MS    = 7 * 864e5;
 
-const isBoosted  = p => p.boostExpiry && p.boostExpiry > Date.now();
-const daysLeft   = p => Math.ceil((p.boostExpiry - Date.now()) / 864e5);
+const isBoosted  = p => p.boost_expiry && p.boost_expiry > Date.now();
+const daysLeft   = p => Math.ceil((p.boost_expiry - Date.now()) / 864e5);
 const affUrl     = p => `https://www.amazon.com/s?k=${encodeURIComponent(`${p.brand} ${p.title} puzzle ${p.pieces} pieces`)}&tag=${AFFILIATE_TAG}`;
 const needsShip  = lt => lt === "swap" || lt === "offer" || lt === "free";
 
@@ -407,7 +413,7 @@ function RequestModal({ puzzle, userOf, onClose }) {
   const [topUp, setTopUp] = useState("");
   const [offerAmt, setOfferAmt] = useState("");
   const [msg, setMsg] = useState(
-    puzzle.listingType === "free" || puzzle.listingType === "pickup"
+    puzzle.listing_type === "free" || puzzle.listing_type === "pickup"
       ? `Hi ${owner?.name}! I'd love to claim "${puzzle.title}".`
       : `Hi ${owner?.name}! I'm interested in swapping for "${puzzle.title}".`
   );
@@ -421,7 +427,7 @@ function RequestModal({ puzzle, userOf, onClose }) {
           {owner?.name} will be in touch to arrange the swap.
         </p>
       </div>
-      {needsShip(puzzle.listingType) && (
+      {needsShip(puzzle.listing_type) && (
         <div style={{ borderTop:"1px solid var(--ink-08)", paddingTop:20 }}>
           <PirateshipBlock context="post-request" />
         </div>
@@ -429,7 +435,7 @@ function RequestModal({ puzzle, userOf, onClose }) {
     </div>
   );
 
-  const lt = LISTING_TYPES[puzzle.listingType] || LISTING_TYPES.offer;
+  const lt = LISTING_TYPES[puzzle.listing_type] || LISTING_TYPES.offer;
   return (
     <>
       {/* Puzzle preview */}
@@ -439,21 +445,21 @@ function RequestModal({ puzzle, userOf, onClose }) {
           <div style={{ fontSize:15, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:2 }}>{puzzle.title}</div>
           <div style={{ fontSize:12, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>{puzzle.pieces.toLocaleString()} pieces · {owner?.name}</div>
         </div>
-        <LTBadge type={puzzle.listingType} />
+        <LTBadge type={puzzle.listing_type} />
       </div>
 
       {/* Free/pickup */}
-      {(puzzle.listingType === "free" || puzzle.listingType === "pickup") && (
+      {(puzzle.listing_type === "free" || puzzle.listing_type === "pickup") && (
         <div style={{ background:lt.bg, border:`1px solid ${lt.color}33`, borderRadius:8, padding:"12px 16px", marginBottom:18 }}>
           <div style={{ fontSize:13, fontWeight:600, color:"var(--ink)", fontFamily:"var(--sans)", marginBottom:3 }}>
-            {puzzle.listingType === "free" ? "Free — you cover shipping (~$5–9)" : "Free local pickup only"}
+            {puzzle.listing_type === "free" ? "Free — you cover shipping (~$5–9)" : "Free local pickup only"}
           </div>
           <div style={{ fontSize:12, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>Coordinate the details with {owner?.name} after sending your request.</div>
         </div>
       )}
 
       {/* Swap offer */}
-      {puzzle.listingType === "swap" && (
+      {puzzle.listing_type === "swap" && (
         <div style={{ marginBottom:18 }}>
           <div style={{ fontSize:11, fontWeight:600, color:"var(--ink-70)", textTransform:"uppercase", letterSpacing:".8px", fontFamily:"var(--sans)", marginBottom:10 }}>Your offer</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:14 }}>
@@ -471,7 +477,7 @@ function RequestModal({ puzzle, userOf, onClose }) {
       )}
 
       {/* Open offer */}
-      {puzzle.listingType === "offer" && (
+      {puzzle.listing_type === "offer" && (
         <div style={{ marginBottom:18 }}>
           <div style={{ fontSize:11, fontWeight:600, color:"var(--ink-70)", textTransform:"uppercase", letterSpacing:".8px", fontFamily:"var(--sans)", marginBottom:10 }}>Offer type</div>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:14 }}>
@@ -540,7 +546,7 @@ function BoostModal({ puzzle, onClose, onBoost }) {
 // ─── Puzzle Card ──────────────────────────────────────────────────────────────
 function PuzzleCard({ puzzle, onOpen, onRequest, saved, onToggleSave, animClass = "" }) {
   const boosted = isBoosted(puzzle);
-  const lt = LISTING_TYPES[puzzle.listingType] || LISTING_TYPES.offer;
+  const lt = LISTING_TYPES[puzzle.listing_type] || LISTING_TYPES.offer;
   return (
     <div className={`ps-card ${animClass}`}
       style={{ background:"var(--warm-white)", borderRadius:10, border:`1px solid ${boosted?"var(--amber)":"var(--ink-15)"}`, overflow:"visible", boxShadow: boosted ? "0 4px 24px rgba(176,107,16,0.20)" : "0 2px 12px rgba(26,21,16,0.06)", position:"relative" }}
@@ -571,14 +577,14 @@ function PuzzleCard({ puzzle, onOpen, onRequest, saved, onToggleSave, animClass 
 
           <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:13 }}>
             <CondBadge cond={puzzle.condition} />
-            <LTBadge type={puzzle.listingType} />
+            <LTBadge type={puzzle.listing_type} />
           </div>
 
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:11, borderTop:"1px solid var(--ink-08)" }}>
             <span style={{ fontSize:10, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>♥ {puzzle.saves} · {puzzle.posted}</span>
             <button className="card-action" style={{ padding:"7px 14px", background:"var(--parchment)", color:"var(--ink)", border:"none", borderRadius:4, fontSize:11, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer", transition:"all .2s" }}
               onClick={e=>{ e.stopPropagation(); onRequest(puzzle); }}>
-              {puzzle.listingType === "free" || puzzle.listingType === "pickup" ? "Claim" : "Request"} →
+              {puzzle.listing_type === "free" || puzzle.listing_type === "pickup" ? "Claim" : "Request"} →
             </button>
           </div>
         </div>
@@ -629,9 +635,9 @@ function Modal({ onClose, children, wide }) {
 }
 
 export default function PuzzleSwap() {
-  const [users, setUsers]           = useState(SEED_USERS);
-  const [puzzles, setPuzzles]       = useState(SEED_PUZZLES);
+  const [puzzles, setPuzzles]       = useState([]);
   const [currentUser, setCU]        = useState(null);
+  const [loading, setLoading]       = useState(true);
   const [view, setView]             = useState("browse");
   const [sel, setSel]               = useState(null);
   const [viewProfile, setViewProf]  = useState(null);
@@ -654,10 +660,130 @@ export default function PuzzleSwap() {
   const [nl, setNl] = useState({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🧩" });
   const [profEdit, setProfEdit]     = useState(null);
 
-  const userOf  = p => Object.values(users).find(u => u.id === p.userId);
-  const enrich  = arr => arr.map(p => ({ ...p, _owner: userOf(p) }));
-  const sortB   = arr => [...arr.filter(isBoosted), ...arr.filter(p => !isBoosted(p))];
+  // ─── Load session + puzzles on mount ────────────────────────────────────────
+  useEffect(() => {
+    // Check existing session
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) loadProfile(session.user.id);
+    });
+    // Listen for auth changes
+    const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) loadProfile(session.user.id);
+      else { setCU(null); setSaved([]); }
+    });
+    loadPuzzles();
+    return () => subscription.unsubscribe();
+  }, []);
 
+  const loadProfile = async (userId) => {
+    const { data } = await sb.from("profiles").select("*").eq("id", userId).single();
+    if (data) {
+      setCU(data);
+      loadSaved(userId);
+    }
+  };
+
+  const loadPuzzles = async () => {
+    setLoading(true);
+    const { data } = await sb.from("puzzles").select("*, profiles(name, location, trade_count)").order("created_at", { ascending: false });
+    if (data) setPuzzles(data.map(p => ({ ...p, userId: p.user_id, _owner: p.profiles ? { name: p.profiles.name, location: p.profiles.location, tradeCount: p.profiles.trade_count, id: p.user_id } : null })));
+    setLoading(false);
+  };
+
+  const loadSaved = async (userId) => {
+    const { data } = await sb.from("saved_puzzles").select("puzzle_id").eq("user_id", userId);
+    if (data) setSaved(data.map(r => r.puzzle_id));
+  };
+
+  // ─── Auth ────────────────────────────────────────────────────────────────────
+  const handleLogin = async () => {
+    if (!aEmail || !aPass) { setAErr("Email and password required."); return; }
+    const { error } = await sb.auth.signInWithPassword({ email: aEmail, password: aPass });
+    if (error) { setAErr("Invalid email or password."); return; }
+    setShowAuth(false); setAErr(""); setAEmail(""); setAPass("");
+  };
+
+  const handleSignup = async () => {
+    if (!aName || !aEmail || !aPass) { setAErr("All starred fields are required."); return; }
+    const { data, error } = await sb.auth.signUp({ email: aEmail, password: aPass });
+    if (error) { setAErr(error.message); return; }
+    if (data.user) {
+      const memberSince = new Date().toLocaleString("default", { month:"short", year:"numeric" });
+      await sb.from("profiles").insert({ id: data.user.id, email: aEmail, name: aName, location: aLoc, trade_preference: aPref, trade_count: 0, member_since: memberSince, bio: "" });
+      await loadProfile(data.user.id);
+    }
+    setShowAuth(false); setAErr(""); setAName(""); setAEmail(""); setAPass(""); setALoc("");
+  };
+
+  const handleLogout = async () => {
+    await sb.auth.signOut();
+    setCU(null); setSaved([]); setView("browse");
+  };
+
+  // ─── Listings ────────────────────────────────────────────────────────────────
+  const handleSubmit = async () => {
+    if (!nl.title || !nl.pieces) return;
+    const { data, error } = await sb.from("puzzles").insert({
+      user_id: currentUser.id,
+      title: nl.title,
+      brand: nl.brand,
+      pieces: parseInt(nl.pieces),
+      condition: nl.condition,
+      listing_type: nl.listingType,
+      category: nl.category,
+      description: nl.description,
+      image: nl.image,
+      art: Math.floor(Math.random() * PIECE_PALETTE.length),
+      saves: 0,
+      boost_expiry: null,
+    }).select().single();
+    if (!error) {
+      await loadPuzzles();
+      setShowList(false);
+      setNl({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🧩" });
+      setView("mylistings");
+    }
+  };
+
+  const handleRemoveListing = async (puzzleId) => {
+    await sb.from("puzzles").delete().eq("id", puzzleId);
+    await loadPuzzles();
+  };
+
+  // ─── Saves ───────────────────────────────────────────────────────────────────
+  const handleToggleSave = async (puzzleId) => {
+    if (!currentUser) { setAuthTab("signup"); setShowAuth(true); return; }
+    if (savedList.includes(puzzleId)) {
+      await sb.from("saved_puzzles").delete().eq("user_id", currentUser.id).eq("puzzle_id", puzzleId);
+      setSaved(s => s.filter(x => x !== puzzleId));
+    } else {
+      await sb.from("saved_puzzles").insert({ user_id: currentUser.id, puzzle_id: puzzleId });
+      setSaved(s => [...s, puzzleId]);
+    }
+  };
+
+  // ─── Boosts ──────────────────────────────────────────────────────────────────
+  const applyBoost = async (puzzleId) => {
+    const expiry = Date.now() + BOOST_MS;
+    await sb.from("puzzles").update({ boost_expiry: expiry }).eq("id", puzzleId);
+    await loadPuzzles();
+  };
+
+  // ─── Profile save ─────────────────────────────────────────────────────────────
+  const saveProfile = async () => {
+    if (!profEdit) return;
+    await sb.from("profiles").update({ name: profEdit.name, location: profEdit.location, trade_preference: profEdit.trade_preference, bio: profEdit.bio }).eq("id", currentUser.id);
+    setCU({ ...profEdit });
+    setProfEdit(null);
+  };
+
+  const handleReq = p => { if (!currentUser) { setAuthTab("signup"); setShowAuth(true); } else setReqModal(p); };
+
+  const isBrowse = view==="browse" && !sel && !showList && !viewProfile;
+  const isSaved  = view==="saved"  && !sel && !viewProfile;
+  const isMyList = view==="mylistings" && !showList;
+
+  // ─── Derived lists ────────────────────────────────────────────────────────────
   const matchPiece = p => {
     if (pieceF === "Any")    return true;
     if (pieceF === "<500")   return p.pieces < 500;
@@ -666,45 +792,17 @@ export default function PuzzleSwap() {
     if (pieceF === "2k+")    return p.pieces > 2000;
     return true;
   };
-
-  const filtered = sortB(enrich(puzzles.filter(p => {
-    if (currentUser && p.userId === currentUser.id) return false;
+  const sortB = arr => [...arr.filter(isBoosted), ...arr.filter(p => !isBoosted(p))];
+  const filtered = sortB(puzzles.filter(p => {
+    if (currentUser && p.user_id === currentUser.id) return false;
     if (catF !== "All" && p.category !== catF) return false;
-    if (typeF !== "All" && p.listingType !== typeF) return false;
+    if (typeF !== "All" && p.listing_type !== typeF) return false;
     if (!p.title.toLowerCase().includes(searchQ.toLowerCase())) return false;
     return matchPiece(p);
-  })));
-
-  const myListings = enrich(puzzles.filter(p => currentUser && p.userId === currentUser.id));
-
+  }));
+  const myListings = puzzles.filter(p => currentUser && p.user_id === currentUser.id);
   const goBack = () => { setSel(null); setViewProf(null); setShowList(false); };
   const nav    = v  => { setView(v); goBack(); };
-
-  const handleLogin = () => {
-    const u = users[aEmail];
-    if (!u || u.password !== aPass) { setAErr("Invalid email or password."); return; }
-    setCU({...u}); setShowAuth(false); setAErr(""); setAEmail(""); setAPass("");
-  };
-  const handleSignup = () => {
-    if (!aName || !aEmail || !aPass) { setAErr("All starred fields are required."); return; }
-    if (users[aEmail]) { setAErr("Account already exists."); return; }
-    const u = { id:"u"+Date.now(), name:aName, email:aEmail, password:aPass, location:aLoc, tradePreference:aPref, tradeCount:0, memberSince:new Date().toLocaleString("default",{month:"short",year:"numeric"}), bio:"" };
-    setUsers(prev=>({...prev,[aEmail]:u})); setCU({...u}); setShowAuth(false); setAErr(""); setAName(""); setAEmail(""); setAPass(""); setALoc("");
-  };
-  const handleSubmit = () => {
-    if (!nl.title || !nl.pieces) return;
-    const p = { ...nl, id:"p"+Date.now(), userId:currentUser.id, pieces:parseInt(nl.pieces), posted:"Just now", saves:0, art:Math.floor(Math.random()*PIECE_PALETTE.length), boostExpiry:null };
-    setPuzzles(prev=>[p,...prev]); setShowList(false);
-    setNl({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🧩" });
-    setView("mylistings");
-  };
-  const handleReq   = p => { if (!currentUser) { setAuthTab("signup"); setShowAuth(true); } else setReqModal(p); };
-  const applyBoost  = id => { setPuzzles(p => p.map(x => x.id===id ? {...x,boostExpiry:Date.now()+BOOST_MS} : x)); };
-  const saveProfile = () => { if (!profEdit) return; setCU({...profEdit}); setUsers(p=>({...p,[profEdit.email]:profEdit})); setProfEdit(null); };
-
-  const isBrowse = view==="browse" && !sel && !showList && !viewProfile;
-  const isSaved  = view==="saved"  && !sel && !viewProfile;
-  const isMyList = view==="mylistings" && !showList;
 
   // Filter pill
   const FPill = ({label, active, onClick}) => (
@@ -737,7 +835,7 @@ export default function PuzzleSwap() {
         <PuzzleCard key={p.id} puzzle={p} animClass={`f${Math.min(i+1,6)}`}
           onOpen={setSel} onRequest={handleReq}
           saved={savedList.includes(p.id)}
-          onToggleSave={id=>setSaved(s=>s.includes(id)?s.filter(x=>x!==id):[...s,id])}
+          onToggleSave={handleToggleSave}
         />
       ))}
     </div>
@@ -749,6 +847,14 @@ export default function PuzzleSwap() {
       <div style={{ fontSize:10, color:"var(--ink-40)", fontFamily:"var(--sans)", textTransform:"uppercase", letterSpacing:"1px", marginTop:3 }}>{label}</div>
     </div>
   );
+  if (loading) return (
+    <div style={{ minHeight:"100vh", background:"var(--warm-white)", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
+      <div style={{ fontSize:40 }}>🧩</div>
+      <div style={{ fontSize:16, fontFamily:"var(--serif)", color:"var(--ink)", fontStyle:"italic" }}>puzzleswap</div>
+      <div style={{ fontSize:12, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>Loading puzzles…</div>
+    </div>
+  );
+
   return (
     <div style={{ minHeight:"100vh", background:"var(--warm-white)" }}>
 
@@ -905,7 +1011,7 @@ export default function PuzzleSwap() {
         {/* ── PUZZLE DETAIL ── */}
         {!showList && sel && (() => {
           const owner   = userOf(sel);
-          const lt      = LISTING_TYPES[sel.listingType] || LISTING_TYPES.offer;
+          const lt      = LISTING_TYPES[sel.listing_type] || LISTING_TYPES.offer;
           const boosted = isBoosted(sel);
           const isSave  = savedList.includes(sel.id);
           return (
@@ -931,7 +1037,7 @@ export default function PuzzleSwap() {
                   {/* Title row */}
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12, marginBottom:12 }}>
                     <h1 style={{ fontSize:28, fontFamily:"var(--serif)", color:"var(--ink)", lineHeight:1.15, letterSpacing:"-0.3px" }}>{sel.title}</h1>
-                    <LTBadge type={sel.listingType} size="md" />
+                    <LTBadge type={sel.listing_type} size="md" />
                   </div>
 
                   {/* Meta badges */}
@@ -949,23 +1055,23 @@ export default function PuzzleSwap() {
                       <span style={{ fontSize:20, color:lt.color, lineHeight:1.2, flexShrink:0 }}>{lt.icon}</span>
                       <div>
                         <div style={{ fontSize:13, fontWeight:600, color:"var(--ink)", fontFamily:"var(--sans)", marginBottom:3 }}>
-                          {sel.listingType==="swap"   && "Even swap — puzzle for puzzle"}
-                          {sel.listingType==="offer"  && "Open to offers — cash, swap, or swap + top-up"}
-                          {sel.listingType==="free"   && "Free — just cover shipping (~$5–9)"}
-                          {sel.listingType==="pickup" && "Free local pickup only"}
+                          {sel.listing_type==="swap"   && "Even swap — puzzle for puzzle"}
+                          {sel.listing_type==="offer"  && "Open to offers — cash, swap, or swap + top-up"}
+                          {sel.listing_type==="free"   && "Free — just cover shipping (~$5–9)"}
+                          {sel.listing_type==="pickup" && "Free local pickup only"}
                         </div>
                         <div style={{ fontSize:12, color:"var(--ink-70)", fontFamily:"var(--sans)", lineHeight:1.55 }}>
-                          {sel.listingType==="swap"   && "Each person ships their own puzzle. No money changes hands."}
-                          {sel.listingType==="offer"  && "Suggest a price, an even swap, or swap with a cash top-up. Lister will accept or counter."}
-                          {sel.listingType==="free"   && "The puzzle is free. You cover shipping. Coordinate via message."}
-                          {sel.listingType==="pickup" && "Zero cost. Arrange local meetup with the lister."}
+                          {sel.listing_type==="swap"   && "Each person ships their own puzzle. No money changes hands."}
+                          {sel.listing_type==="offer"  && "Suggest a price, an even swap, or swap with a cash top-up. Lister will accept or counter."}
+                          {sel.listing_type==="free"   && "The puzzle is free. You cover shipping. Coordinate via message."}
+                          {sel.listing_type==="pickup" && "Zero cost. Arrange local meetup with the lister."}
                         </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Pirateship */}
-                  {needsShip(sel.listingType) && <PirateshipBlock context="detail" />}
+                  {needsShip(sel.listing_type) && <PirateshipBlock context="detail" />}
 
                   {/* Amazon affiliate */}
                   <a href={affUrl(sel)} target="_blank" rel="noopener noreferrer" className="aff-link"
@@ -986,14 +1092,14 @@ export default function PuzzleSwap() {
                       <Avatar user={owner} size={40} />
                       <div style={{ flex:1 }}>
                         <div style={{ fontSize:14, fontFamily:"var(--serif)", color:"var(--ink)" }}>{owner.name}</div>
-                        <div style={{ fontSize:12, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>📍 {owner.location} · <span style={{ color:"var(--terracotta)" }}>{owner.tradeCount} trades</span></div>
+                        <div style={{ fontSize:12, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>📍 {owner.location} · <span style={{ color:"var(--terracotta)" }}>{owner.trade_count} trades</span></div>
                       </div>
                       <span style={{ color:"var(--ink-40)", fontSize:16 }}>›</span>
                     </div>
                   )}
 
                   <PrimaryBtn style={{ width:"100%", justifyContent:"center", fontSize:15 }} onClick={()=>handleReq(sel)}>
-                    {sel.listingType==="free"||sel.listingType==="pickup" ? "Claim This Puzzle →" : sel.listingType==="swap" ? "Propose a Swap →" : "Make an Offer →"}
+                    {sel.listing_type==="free"||sel.listing_type==="pickup" ? "Claim This Puzzle →" : sel.listing_type==="swap" ? "Propose a Swap →" : "Make an Offer →"}
                   </PrimaryBtn>
                 </div>
               </div>
@@ -1016,12 +1122,12 @@ export default function PuzzleSwap() {
               </div>
               <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
                 <StatBox num={viewProfile.tradeCount} label="Trades" accent />
-                <StatBox num={puzzles.filter(p=>p.userId===viewProfile.id).length} label="Listings" />
+                <StatBox num={puzzles.filter(p=>p.user_id===viewProfile.id).length} label="Listings" />
                 <StatBox num={viewProfile.memberSince} label="Member since" />
               </div>
             </div>
             <SectionHead title="Their puzzles" />
-            <Grid items={enrich(puzzles.filter(p=>p.userId===viewProfile.id))} />
+            <Grid items={enrich(puzzles.filter(p=>p.user_id===viewProfile.id))} />
           </div>
         )}
 
@@ -1227,10 +1333,10 @@ export default function PuzzleSwap() {
                           <div style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)", marginBottom:10 }}>{p.pieces.toLocaleString()} pcs · {p.posted}</div>
                           <div style={{ display:"flex", gap:5, marginBottom:12, flexWrap:"wrap" }}>
                             <CondBadge cond={p.condition} />
-                            <LTBadge type={p.listingType} />
+                            <LTBadge type={p.listing_type} />
                           </div>
                           <div style={{ paddingTop:10, borderTop:"1px solid var(--ink-08)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                            <button onClick={()=>setPuzzles(prev=>prev.filter(x=>x.id!==p.id))} style={{ background:"none", border:"none", cursor:"pointer", fontSize:12, color:"var(--terracotta)", fontFamily:"var(--sans)" }}>Remove</button>
+                            <button onClick={()=>handleRemoveListing(p.id)} style={{ background:"none", border:"none", cursor:"pointer", fontSize:12, color:"var(--terracotta)", fontFamily:"var(--sans)" }}>Remove</button>
                             {!boosted
                               ? <button className="ps-btn-ghost" onClick={()=>setBoostModal(p)} style={{ display:"flex", alignItems:"center", gap:4, padding:"5px 12px", background:"none", color:"var(--ink-70)", border:"1px solid var(--ink-15)", borderRadius:5, fontSize:11, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer" }}>👑 Boost · {BOOST_PRICE}</button>
                               : <span style={{ fontSize:11, color:"var(--amber)", fontFamily:"var(--sans)" }}>✓ Active</span>
@@ -1259,9 +1365,9 @@ export default function PuzzleSwap() {
                 </div>
               </div>
               <div style={{ display:"flex", gap:10 }}>
-                <StatBox num={currentUser.tradeCount} label="Trades" accent />
+                <StatBox num={currentUser.trade_count} label="Trades" accent />
                 <StatBox num={myListings.length} label="Listings" />
-                <StatBox num={currentUser.memberSince} label="Since" />
+                <StatBox num={currentUser.member_since} label="Since" />
               </div>
             </div>
             <div style={{ background:"var(--warm-white)", borderRadius:14, padding:28, border:"1px solid var(--ink-15)" }}>
@@ -1270,7 +1376,7 @@ export default function PuzzleSwap() {
                 <Inp label="Name" value={profEdit.name} onChange={e=>setProfEdit(p=>({...p,name:e.target.value}))} />
                 <Inp label="Location" placeholder="City, State" value={profEdit.location||""} onChange={e=>setProfEdit(p=>({...p,location:e.target.value}))} />
               </div>
-              <Sel label="Trade preference" value={profEdit.tradePreference||"Both"} onChange={e=>setProfEdit(p=>({...p,tradePreference:e.target.value}))}>{TRADE_OPTS.map(c=><option key={c}>{c}</option>)}</Sel>
+              <Sel label="Trade preference" value={profEdit.trade_preference||"Both"} onChange={e=>setProfEdit(p=>({...p,trade_preference:e.target.value}))}>{TRADE_OPTS.map(c=><option key={c}>{c}</option>)}</Sel>
               <Inp label="Bio (optional)" placeholder="A line about your puzzle style…" value={profEdit.bio||""} onChange={e=>setProfEdit(p=>({...p,bio:e.target.value}))} />
               <div style={{ display:"flex", gap:10 }}>
                 <GhostBtn style={{ flex:1 }} onClick={()=>{setProfEdit(null);setView("browse");}}>Cancel</GhostBtn>
@@ -1278,7 +1384,7 @@ export default function PuzzleSwap() {
               </div>
             </div>
             <div style={{ marginTop:14, textAlign:"right" }}>
-              <button onClick={()=>{setCU(null);setView("browse");}} style={{ background:"none", border:"none", cursor:"pointer", fontSize:13, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>Log out</button>
+              <button onClick={handleLogout} style={{ background:"none", border:"none", cursor:"pointer", fontSize:13, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>Log out</button>
             </div>
           </div>
         )}
