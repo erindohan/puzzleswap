@@ -391,17 +391,28 @@ function PirateshipBlock({ context = "detail" }) {
 }
 
 // ─── Request Modal ────────────────────────────────────────────────────────────
-function RequestModal({ puzzle, userOf, onClose, onSend }) {
+// ZIP-based proximity check — same first 3 digits = likely local (~30 mile radius)
+function isLocalZip(zipA, zipB) {
+  if (!zipA || !zipB) return false;
+  return zipA.slice(0,3) === zipB.slice(0,3);
+}
+
+function RequestModal({ puzzle, userOf, currentUser, onClose, onSend }) {
   const owner = userOf(puzzle);
+  const local = isLocalZip(currentUser?.location, owner?.location);
+
   const [step, setStep] = useState("form");
+  const [shipPref, setShipPref] = useState(
+    puzzle.listing_type === "pickup" ? "local" : local ? "local" : "ship"
+  );
   const [offerType, setOfferType] = useState(
     puzzle.listing_type === "free" || puzzle.listing_type === "pickup" ? "claim" :
     puzzle.listing_type === "offer" ? "cash" : "swap"
   );
-  const [swapDesc, setSwapDesc] = useState("");
-  const [topUp, setTopUp] = useState("");
-  const [offerAmt, setOfferAmt] = useState("");
-  const [msg, setMsg] = useState(
+  const [swapDesc, setSwapDesc]   = useState("");
+  const [topUp, setTopUp]         = useState("");
+  const [offerAmt, setOfferAmt]   = useState("");
+  const [msg, setMsg]             = useState(
     puzzle.listing_type === "free" || puzzle.listing_type === "pickup"
       ? `Hi ${owner?.name}! I'd love to claim "${puzzle.title}".`
       : `Hi ${owner?.name}! I'm interested in swapping for "${puzzle.title}".`
@@ -416,7 +427,7 @@ function RequestModal({ puzzle, userOf, onClose, onSend }) {
           {owner?.name} will be in touch to arrange the swap.
         </p>
       </div>
-      {needsShip(puzzle.listing_type) && (
+      {shipPref === "ship" && needsShip(puzzle.listing_type) && (
         <div style={{ borderTop:"1px solid var(--ink-08)", paddingTop:20 }}>
           <PirateshipBlock context="post-request" />
         </div>
@@ -428,8 +439,8 @@ function RequestModal({ puzzle, userOf, onClose, onSend }) {
   return (
     <>
       {/* Puzzle preview */}
-      <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:22, padding:"14px 16px", background:"var(--parchment)", borderRadius:8 }}>
-        <div style={{ width:52, height:52, background:PIECE_PALETTE[puzzle.art%PIECE_PALETTE.length].bg, borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, flexShrink:0 }}>{puzzle.image||"🧩"}</div>
+      <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:20, padding:"13px 16px", background:"var(--parchment)", borderRadius:8 }}>
+        <div style={{ width:48, height:48, background:PIECE_PALETTE[puzzle.art%PIECE_PALETTE.length].bg, borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>{puzzle.image||"🧩"}</div>
         <div>
           <div style={{ fontSize:15, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:2 }}>{puzzle.title}</div>
           <div style={{ fontSize:12, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>{puzzle.pieces.toLocaleString()} pieces · {owner?.name}</div>
@@ -437,13 +448,37 @@ function RequestModal({ puzzle, userOf, onClose, onSend }) {
         <LTBadge type={puzzle.listing_type} />
       </div>
 
-      {/* Free/pickup */}
+      {/* Shipping preference — auto-detected from ZIP */}
+      {puzzle.listing_type !== "pickup" && (
+        <div style={{ marginBottom:18 }}>
+          <div style={{ fontSize:11, fontWeight:600, color:"var(--ink-70)", textTransform:"uppercase", letterSpacing:".8px", fontFamily:"var(--sans)", marginBottom:8 }}>
+            How would you like to swap?
+            {local && <span style={{ marginLeft:6, fontSize:10, color:"var(--sage)", fontWeight:500, textTransform:"none", letterSpacing:0 }}>📍 You're both nearby</span>}
+            {!local && currentUser?.location && owner?.location && <span style={{ marginLeft:6, fontSize:10, color:"var(--cobalt)", fontWeight:500, textTransform:"none", letterSpacing:0 }}>📦 Different areas — shipping recommended</span>}
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+            {[
+              ["local","📍","Local meetup","Meet up to exchange in person"],
+              ["ship","📦","Ship to each other","Each person mails their puzzle"],
+            ].map(([v,icon,label,sub])=>(
+              <button key={v} onClick={()=>setShipPref(v)}
+                style={{ padding:"12px", background:shipPref===v?"var(--cream)":"var(--warm-white)", border:`1.5px solid ${shipPref===v?"var(--terracotta)":"var(--ink-15)"}`, borderRadius:8, cursor:"pointer", textAlign:"left", transition:"all .15s" }}>
+                <div style={{ fontSize:18, marginBottom:4 }}>{icon}</div>
+                <div style={{ fontSize:12, fontWeight:600, color:"var(--ink)", fontFamily:"var(--sans)" }}>{label}</div>
+                <div style={{ fontSize:11, color:"var(--ink-70)", fontFamily:"var(--sans)", marginTop:2 }}>{sub}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Free/pickup info */}
       {(puzzle.listing_type === "free" || puzzle.listing_type === "pickup") && (
         <div style={{ background:lt.bg, border:`1px solid ${lt.color}33`, borderRadius:8, padding:"12px 16px", marginBottom:18 }}>
           <div style={{ fontSize:13, fontWeight:600, color:"var(--ink)", fontFamily:"var(--sans)", marginBottom:3 }}>
             {puzzle.listing_type === "free" ? "Free — you cover shipping (~$5–9)" : "Free local pickup only"}
           </div>
-          <div style={{ fontSize:12, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>Coordinate the details with {owner?.name} after sending your request.</div>
+          <div style={{ fontSize:12, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>Coordinate details with {owner?.name} after sending your request.</div>
         </div>
       )}
 
@@ -452,7 +487,7 @@ function RequestModal({ puzzle, userOf, onClose, onSend }) {
         <div style={{ marginBottom:18 }}>
           <div style={{ fontSize:11, fontWeight:600, color:"var(--ink-70)", textTransform:"uppercase", letterSpacing:".8px", fontFamily:"var(--sans)", marginBottom:10 }}>Your offer</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:14 }}>
-            {[["swap","⇄","Even Swap","Puzzle for puzzle — each ships their own"],["swap_plus","⇄ +$","Swap + Top-up","Your puzzle plus a cash difference"]].map(([v,icon,label,sub])=>(
+            {[["swap","⇄","Even Swap","Puzzle for puzzle"],["swap_plus","⇄ +$","Swap + Top-up","Your puzzle + cash top-up"]].map(([v,icon,label,sub])=>(
               <button key={v} onClick={()=>setOfferType(v)} style={{ padding:"12px", background:offerType===v?"var(--cream)":"var(--warm-white)", border:`1.5px solid ${offerType===v?"var(--terracotta)":"var(--ink-15)"}`, borderRadius:8, cursor:"pointer", textAlign:"left", transition:"all .15s" }}>
                 <div style={{ fontSize:18, marginBottom:4 }}>{icon}</div>
                 <div style={{ fontSize:12, fontWeight:600, color:"var(--ink)", fontFamily:"var(--sans)" }}>{label}</div>
@@ -477,7 +512,7 @@ function RequestModal({ puzzle, userOf, onClose, onSend }) {
               </button>
             ))}
           </div>
-          {offerType === "cash" && <Inp label="Offer amount ($)" type="number" placeholder="e.g. 12" value={offerAmt} onChange={e=>setOfferAmt(e.target.value)} hint="Payment via Venmo or PayPal — sort with lister." />}
+          {offerType === "cash" && <Inp label="Offer amount ($)" type="number" placeholder="e.g. 12" value={offerAmt} onChange={e=>setOfferAmt(e.target.value)} hint="Via Venmo or PayPal — sort with lister." />}
           {(offerType === "swap" || offerType === "swap_plus") && <TA label="Your puzzle" placeholder="Name, brand, piece count, condition…" value={swapDesc} onChange={e=>setSwapDesc(e.target.value)} />}
           {offerType === "swap_plus" && <Inp label="Cash top-up ($)" type="number" placeholder="e.g. 5" value={topUp} onChange={e=>setTopUp(e.target.value)} />}
         </div>
@@ -486,48 +521,8 @@ function RequestModal({ puzzle, userOf, onClose, onSend }) {
       <TA label="Message" value={msg} onChange={e=>setMsg(e.target.value)} />
       <div style={{ display:"flex", gap:10 }}>
         <GhostBtn style={{ flex:1 }} onClick={onClose}>Cancel</GhostBtn>
-        <PrimaryBtn style={{ flex:2 }} onClick={()=>{ onSend({ offerType, swapDesc, topUp, offerAmt, msg }); setStep("sent"); }}>Send Request</PrimaryBtn>
+        <PrimaryBtn style={{ flex:2 }} onClick={()=>{ onSend({ offerType, swapDesc, topUp, offerAmt, msg, shipPref }); setStep("sent"); }}>Send Request</PrimaryBtn>
       </div>
-    </>
-  );
-}
-
-// ─── Boost Modal ──────────────────────────────────────────────────────────────
-function BoostModal({ puzzle, onClose, onBoost }) {
-  const [state, setState] = useState("idle"); // idle | paying | done
-  const go = () => { setState("paying"); setTimeout(()=>{ setState("done"); setTimeout(()=>{ onBoost(puzzle.id); onClose(); }, 1500); }, 1200); };
-  if (state === "done") return (
-    <div style={{ textAlign:"center", padding:"20px 0" }}>
-      <div style={{ fontSize:48, marginBottom:12 }}>👑</div>
-      <div style={{ fontSize:24, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:8 }}>Boosted for 7 days</div>
-      <div style={{ fontSize:14, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>Your listing now sits above all others in browse and search.</div>
-    </div>
-  );
-  return (
-    <>
-      <div style={{ background:"var(--parchment)", borderRadius:10, overflow:"hidden", marginBottom:22, border:"1px solid var(--tan)" }}>
-        <PuzzleBox artIdx={puzzle.art||0} emoji={puzzle.image||"🧩"} size="sm" category={puzzle.category} />
-        <div style={{ padding:"10px 14px" }}>
-          <div style={{ fontSize:14, fontFamily:"var(--serif)", color:"var(--ink)" }}>{puzzle.title}</div>
-          <div style={{ fontSize:11, color:"var(--ink-70)", fontFamily:"var(--sans)", marginTop:2 }}>{puzzle.pieces.toLocaleString()} pieces</div>
-        </div>
-      </div>
-      <div style={{ fontSize:22, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:6 }}>Boost this listing</div>
-      <p style={{ fontSize:14, color:"var(--ink-70)", fontFamily:"var(--sans)", lineHeight:1.65, marginBottom:18 }}>Your puzzle will appear at the top of all browse results and searches for 7 days with a gold crown.</p>
-      <div style={{ background:"var(--cream)", borderRadius:8, padding:"14px 16px", marginBottom:20, border:"1px solid var(--tan)" }}>
-        {["👑  Pinned above all other listings","📈  First in every filter & category","✨  Gold crown badge on your card","⏱  Active for exactly 7 days"].map(t=>(
-          <div key={t} style={{ fontSize:13, color:"var(--ink-70)", fontFamily:"var(--sans)", marginBottom:6 }}>{t}</div>
-        ))}
-      </div>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-        <span style={{ fontSize:13, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>One-time boost</span>
-        <span style={{ fontSize:26, fontFamily:"var(--serif)", color:"var(--terracotta)" }}>{BOOST_PRICE}</span>
-      </div>
-      <div style={{ display:"flex", gap:10 }}>
-        <GhostBtn style={{ flex:1 }} onClick={onClose}>Cancel</GhostBtn>
-        <PrimaryBtn style={{ flex:2 }} onClick={go}>{state==="paying"?"Processing…":`Pay ${BOOST_PRICE} & Boost`}</PrimaryBtn>
-      </div>
-      <div style={{ textAlign:"center", marginTop:10, fontSize:10, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>Payments via Stripe · Secure</div>
     </>
   );
 }
@@ -610,7 +605,6 @@ function HowItWorks() {
 function InboxCard({ r, onRead, onAccept, onDecline, onReply }) {
   const [showReply, setShowReply] = useState(false);
   const [replyText, setReplyText] = useState(r.seller_reply || "");
-  const [replySaved, setReplySaved] = useState(!!r.seller_reply);
 
   const statusColor = {
     accepted: "var(--sage)",
@@ -632,7 +626,6 @@ function InboxCard({ r, onRead, onAccept, onDecline, onReply }) {
 
   const handleSaveReply = () => {
     onReply(replyText);
-    setReplySaved(true);
     setShowReply(false);
   };
 
@@ -770,6 +763,7 @@ export default function PuzzleSwap() {
   const [savedList, setSaved]       = useState([]);
   const [reqModal, setReqModal]     = useState(null);
   const [requests, setRequests]     = useState([]);
+  const [sentRequests, setSent]     = useState([]);
   const [unreadCount, setUnread]    = useState(0);
   const [aEmail, setAEmail]         = useState("");
   const [aPass, setAPass]           = useState("");
@@ -801,6 +795,7 @@ export default function PuzzleSwap() {
       setCU(data);
       loadSaved(userId);
       loadRequests(userId);
+      loadSentRequests(userId);
     } else {
       const { data: authUser } = await sb.auth.getUser();
       const email = authUser?.user?.email || "";
@@ -816,6 +811,11 @@ export default function PuzzleSwap() {
       setRequests(data);
       setUnread(data.filter(r => !r.read).length);
     }
+  };
+
+  const loadSentRequests = async (userId) => {
+    const { data } = await sb.from("requests").select("*").eq("sender_id", userId).order("created_at", { ascending: false });
+    if (data) setSent(data);
   };
 
   const markRead = async (requestId) => {
@@ -937,40 +937,45 @@ export default function PuzzleSwap() {
 
   const handleReq = p => { if (!currentUser) { setAuthTab("signup"); setShowAuth(true); } else setReqModal(p); };
 
-  const handleSendRequest = async ({ offerType, swapDesc, topUp, offerAmt, msg }) => {
+  const handleSendRequest = async ({ offerType, swapDesc, topUp, offerAmt, msg, shipPref }) => {
     if (!reqModal || !currentUser) return;
     await sb.from("requests").insert({
-      puzzle_id:    reqModal.id,
-      puzzle_title: reqModal.title,
-      sender_id:    currentUser.id,
-      sender_name:  currentUser.name,
-      sender_email: currentUser.email,
-      seller_id:    reqModal.user_id,
-      offer_type:   offerType,
-      message:      msg,
-      swap_desc:    swapDesc,
-      top_up:       topUp,
-      offer_amt:    offerAmt,
-      status:       "pending",
-      read:         false,
+      puzzle_id:           reqModal.id,
+      puzzle_title:        reqModal.title,
+      sender_id:           currentUser.id,
+      sender_name:         currentUser.name,
+      sender_email:        currentUser.email,
+      seller_id:           reqModal.user_id,
+      offer_type:          offerType,
+      message:             msg,
+      swap_desc:           swapDesc,
+      top_up:              topUp,
+      offer_amt:           offerAmt,
+      shipping_preference: shipPref,
+      status:              "pending",
+      read:                false,
     });
+    await loadSentRequests(currentUser.id);
+  };
+
+  const handleCancelRequest = async (requestId) => {
+    await sb.from("requests").delete().eq("id", requestId);
+    setSent(prev => prev.filter(r => r.id !== requestId));
   };
 
   const handleAccept = async (requestId) => {
     await sb.from("requests").update({ status:"accepted", read:true }).eq("id", requestId);
-    setRequests(prev => prev.map(r => r.id===requestId ? {...r, status:"accepted", read:true} : r));
-    setUnread(prev => Math.max(0, prev-1));
+    await loadRequests(currentUser.id);
   };
 
   const handleDecline = async (requestId) => {
     await sb.from("requests").update({ status:"declined", read:true }).eq("id", requestId);
-    setRequests(prev => prev.map(r => r.id===requestId ? {...r, status:"declined", read:true} : r));
-    setUnread(prev => Math.max(0, prev-1));
+    await loadRequests(currentUser.id);
   };
 
   const handleReply = async (requestId, reply) => {
     await sb.from("requests").update({ seller_reply:reply, read:true }).eq("id", requestId);
-    setRequests(prev => prev.map(r => r.id===requestId ? {...r, seller_reply:reply, read:true} : r));
+    await loadRequests(currentUser.id);
   };
 
   // ─── Derived lists ────────────────────────────────────────────────────────────
@@ -1085,7 +1090,7 @@ export default function PuzzleSwap() {
             </div>
             <div style={{ width:1, height:18, background:"rgba(255,255,255,0.10)", margin:"0 4px", flexShrink:0 }} />
             {/* Nav links */}
-            {[["Browse","browse",isBrowse],...(currentUser?[["Saved"+(savedList.length?` (${savedList.length})`:""),"saved",isSaved],["My Listings","mylistings",isMyList],["Inbox"+(unreadCount?` (${unreadCount})`:""),"inbox",view==="inbox"]]:[])].map(([label,v,active])=>(
+            {[["Browse","browse",isBrowse],...(currentUser?[["Saved"+(savedList.length?` (${savedList.length})`:""),"saved",isSaved],["My Listings","mylistings",isMyList],["Inbox"+(unreadCount?` (${unreadCount})`:""),"inbox",view==="inbox"],["My Requests","outbox",view==="outbox"]]:[])].map(([label,v,active])=>(
               <button key={v} className="nav-link" onClick={()=>nav(v)}
                 style={{ padding:"6px 11px", background:active?"rgba(255,255,255,0.09)":"none", color:active?"white":"rgba(255,255,255,0.48)", border:"none", borderRadius:6, cursor:"pointer", fontSize:12, fontFamily:"var(--sans)", fontWeight:active?600:400, whiteSpace:"nowrap", transition:"all .15s" }}>
                 {label}
@@ -1134,7 +1139,7 @@ export default function PuzzleSwap() {
         {[
           ["🔍","Browse","browse",isBrowse],
           ["♡","Saved","saved",isSaved],
-          ...(currentUser ? [["📬","Inbox"+(unreadCount?` ${unreadCount}`:""),"inbox",view==="inbox"]] : []),
+          ...(currentUser ? [["📬","Inbox"+(unreadCount?` ${unreadCount}`:""),"inbox",view==="inbox"],["📤","Sent","outbox",view==="outbox"]] : []),
           ...(currentUser ? [["📋","My Listings","mylistings",isMyList]] : []),
           ...(currentUser ? [["👤","Profile","profile",view==="profile"]] : [["👤","Log in","login",false]]),
         ].map(([icon,label,v,active])=>(
@@ -1517,6 +1522,77 @@ export default function PuzzleSwap() {
           </>
         )}
 
+        {/* ── OUTBOX / SENT REQUESTS ── */}
+        {!showList && !sel && !viewProfile && view === "outbox" && currentUser && (
+          <>
+            <SectionHead title="My Requests" sub="Requests you've sent to other puzzlers." />
+            {sentRequests.length === 0
+              ? <EmptyState icon="📤" title="No requests sent yet" sub="When you request a puzzle, you'll be able to track it here." action={<PrimaryBtn onClick={()=>nav("browse")} style={{ margin:"0 auto", display:"inline-flex" }}>Browse Puzzles</PrimaryBtn>} />
+              : (
+                <div style={{ display:"flex", flexDirection:"column", gap:12, maxWidth:720 }}>
+                  {sentRequests.map(r => {
+                    const statusColor = { accepted:"var(--sage)", declined:"var(--terracotta)", pending:"var(--amber)" }[r.status||"pending"];
+                    const statusBg    = { accepted:"var(--sage-bg)", declined:"var(--terracotta-bg)", pending:"var(--amber-bg)" }[r.status||"pending"];
+                    const statusLabel = { accepted:"✓ Accepted", declined:"✕ Declined", pending:"● Pending" }[r.status||"pending"];
+                    return (
+                      <div key={r.id} style={{ background:"var(--warm-white)", borderRadius:12, border:"1px solid var(--ink-08)", overflow:"hidden", boxShadow:"0 1px 4px rgba(26,21,16,0.05)" }}>
+                        <div style={{ padding:"16px 20px", borderBottom: r.seller_reply || r.status==="accepted" ? "1px solid var(--ink-08)" : "none" }}>
+                          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12 }}>
+                            <div>
+                              <div style={{ fontSize:15, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:4 }}>
+                                Request for <strong>{r.puzzle_title}</strong>
+                              </div>
+                              <div style={{ display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
+                                <span style={{ fontSize:10, fontWeight:600, padding:"3px 8px", background:statusBg, color:statusColor, borderRadius:99, fontFamily:"var(--sans)" }}>{statusLabel}</span>
+                                {r.shipping_preference && (
+                                  <span style={{ fontSize:10, padding:"2px 8px", background:"var(--parchment)", color:"var(--ink-70)", borderRadius:3, fontFamily:"var(--sans)" }}>
+                                    {r.shipping_preference === "local" ? "📍 Local meetup" : "📦 Shipping"}
+                                  </span>
+                                )}
+                                {r.offer_type && <span style={{ fontSize:10, padding:"2px 8px", background:"var(--cobalt-bg)", color:"var(--cobalt)", borderRadius:3, fontFamily:"var(--sans)", fontWeight:600 }}>
+                                  {r.offer_type==="cash"?"💵 Cash":r.offer_type==="swap"?"⇄ Swap":r.offer_type==="swap_plus"?"⇄+$":"Offer"}
+                                </span>}
+                              </div>
+                            </div>
+                            <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:8, flexShrink:0 }}>
+                              <span style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>{timeAgo(r.created_at)}</span>
+                              {r.status === "pending" && (
+                                <button onClick={()=>handleCancelRequest(r.id)}
+                                  style={{ fontSize:11, color:"var(--terracotta)", background:"none", border:"1px solid var(--terracotta)", borderRadius:5, padding:"4px 10px", cursor:"pointer", fontFamily:"var(--sans)", fontWeight:600 }}>
+                                  Cancel
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          {r.message && <div style={{ fontSize:13, color:"var(--ink-70)", fontFamily:"var(--sans)", background:"var(--cream)", padding:"8px 12px", borderRadius:6, lineHeight:1.6, marginTop:10 }}>"{r.message}"</div>}
+                        </div>
+
+                        {/* Seller reply */}
+                        {r.seller_reply && (
+                          <div style={{ padding:"12px 20px", background:"var(--sage-bg)" }}>
+                            <div style={{ fontSize:11, fontWeight:600, color:"var(--sage)", fontFamily:"var(--sans)", marginBottom:4, textTransform:"uppercase", letterSpacing:".5px" }}>Reply from seller</div>
+                            <div style={{ fontSize:13, color:"var(--ink-70)", fontFamily:"var(--sans)", lineHeight:1.6 }}>{r.seller_reply}</div>
+                          </div>
+                        )}
+
+                        {/* Accepted — show next steps */}
+                        {r.status === "accepted" && (
+                          <div style={{ padding:"12px 20px", background:"var(--sage-bg)", borderTop:"1px solid rgba(61,107,69,0.15)" }}>
+                            <div style={{ fontSize:12, fontWeight:600, color:"var(--sage)", fontFamily:"var(--sans)", marginBottom:3 }}>🎉 Your request was accepted!</div>
+                            <div style={{ fontSize:12, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>
+                              Check your email — the seller has your contact info and will reach out to coordinate the swap.
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            }
+          </>
+        )}
+
         {/* ── MY LISTINGS ── */}
         {!showList && !sel && !viewProfile && view === "mylistings" && currentUser && (
           <>
@@ -1633,7 +1709,7 @@ export default function PuzzleSwap() {
       {/* ── REQUEST MODAL ── */}
       {reqModal && (
         <Modal onClose={()=>setReqModal(null)} wide>
-          <RequestModal puzzle={reqModal} userOf={userOf} onClose={()=>setReqModal(null)} onSend={handleSendRequest} />
+          <RequestModal puzzle={reqModal} userOf={userOf} currentUser={currentUser} onClose={()=>setReqModal(null)} onSend={handleSendRequest} />
         </Modal>
       )}
 
