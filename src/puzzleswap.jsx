@@ -12,7 +12,7 @@ const initStyles = () => {
   // DM Serif Display (editorial serif) + DM Sans (clean body)
   const link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href = "https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap";
+  link.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap";
   document.head.appendChild(link);
 
   const s = document.createElement("style");
@@ -21,54 +21,54 @@ const initStyles = () => {
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      /* Surfaces — warm but brighter, like a well-lit game table */
-      --cream: #FFF8EE;
-      --warm-white: #FFFCF7;
-      --parchment: #FFF0D6;
-      --tan: #E8C98A;
+      /* Surfaces — warm linen, not stark white */
+      --cream: #F7F2EA;
+      --warm-white: #FBF8F3;
+      --parchment: #EFE8D8;
+      --tan: #D4C4A8;
 
-      /* Ink */
-      --ink: #1C1208;
-      --ink-70: rgba(28,18,8,0.70);
-      --ink-40: rgba(28,18,8,0.40);
-      --ink-15: rgba(28,18,8,0.15);
-      --ink-08: rgba(28,18,8,0.08);
+      /* Ink — warm dark brown, not cold black */
+      --ink: #2C1F0E;
+      --ink-70: rgba(44,31,14,0.70);
+      --ink-40: rgba(44,31,14,0.40);
+      --ink-15: rgba(44,31,14,0.15);
+      --ink-08: rgba(44,31,14,0.08);
 
-      /* Primary — a proper puzzle-box red, warm and inviting */
-      --terracotta: #E03E1A;
-      --terracotta-mid: #F05A38;
-      --terracotta-dim: rgba(224,62,26,0.10);
-      --terracotta-bg: #FFF0EC;
+      /* Primary — dusty rose/mauve, Rifle Paper Co. energy */
+      --terracotta: #A85C52;
+      --terracotta-mid: #C27068;
+      --terracotta-dim: rgba(168,92,82,0.10);
+      --terracotta-bg: #FAF0EE;
 
-      /* Success — sunflower yellow-green, not corporate sage */
-      --sage: #2A7A2A;
-      --sage-mid: #3D9E3D;
-      --sage-dim: rgba(42,122,42,0.10);
-      --sage-bg: #EDFAED;
+      /* Success — muted sage green, botanical */
+      --sage: #4A7055;
+      --sage-mid: #5E8A6A;
+      --sage-dim: rgba(74,112,85,0.10);
+      --sage-bg: #EDF4EF;
 
-      /* Warning — deep golden amber */
-      --amber: #C47A00;
-      --amber-mid: #E09000;
-      --amber-dim: rgba(196,122,0,0.12);
-      --amber-bg: #FFF8E0;
+      /* Warning — warm honey amber */
+      --amber: #8A6020;
+      --amber-mid: #A8782A;
+      --amber-dim: rgba(138,96,32,0.12);
+      --amber-bg: #F8F0E0;
 
-      /* Info — a friendly sky blue, not corporate cobalt */
-      --cobalt: #1A6BAF;
-      --cobalt-mid: #2E85CF;
-      --cobalt-dim: rgba(26,107,175,0.10);
-      --cobalt-bg: #E8F4FF;
+      /* Info — dusty slate blue */
+      --cobalt: #3A5A8A;
+      --cobalt-mid: #4E70A0;
+      --cobalt-dim: rgba(58,90,138,0.10);
+      --cobalt-bg: #EBF0F8;
 
-      /* Accent — warm violet for variety */
-      --plum: #7A3A9A;
-      --plum-dim: rgba(122,58,154,0.10);
-      --plum-bg: #F5EEFF;
+      /* Accent — soft plum */
+      --plum: #6B4A7A;
+      --plum-dim: rgba(107,74,122,0.10);
+      --plum-bg: #F2EDF7;
 
-      /* Fun accent — puzzle-piece teal */
-      --teal: #0A8A7A;
-      --teal-bg: #E6F7F5;
+      /* Accent — muted teal */
+      --teal: #2A6B62;
+      --teal-bg: #E8F4F2;
 
-      --serif: 'Fredoka', 'DM Serif Display', Georgia, serif;
-      --sans: 'Nunito', 'DM Sans', system-ui, sans-serif;
+      --serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+      --sans: 'Inter', system-ui, -apple-system, sans-serif;
     }
 
     body { background: var(--warm-white); color: var(--ink); font-family: var(--sans); }
@@ -83,33 +83,33 @@ const initStyles = () => {
     input:focus, textarea:focus, select:focus {
       outline: none;
       border-color: var(--terracotta) !important;
-      box-shadow: 0 0 0 3px rgba(224,62,26,0.12) !important;
+      box-shadow: 0 0 0 3px rgba(168,92,82,0.10) !important;
     }
 
-    /* Card hover — bouncier, more playful */
+    /* Card hover — gentle lift, editorial feel */
     .ps-card {
-      transition: transform 0.22s cubic-bezier(0.34,1.6,0.64,1), box-shadow 0.22s ease;
+      transition: transform 0.25s cubic-bezier(0.34,1.3,0.64,1), box-shadow 0.25s ease;
       cursor: pointer;
     }
-    .ps-card:hover { transform: translateY(-10px) rotate(0.5deg); box-shadow: 0 28px 56px rgba(28,18,8,0.16) !important; }
-    .ps-card:hover .card-action { background: var(--terracotta) !important; color: white !important; }
+    .ps-card:hover { transform: translateY(-6px) rotate(0.2deg); box-shadow: 0 24px 48px rgba(44,31,14,0.13) !important; }
+    .ps-card:hover .card-action { background: var(--terracotta) !important; color: white !important; border-color: var(--terracotta) !important; }
 
     /* Nav link */
     .nav-link { transition: color 0.15s; }
-    .nav-link:hover { color: var(--terracotta) !important; }
+    .nav-link:hover { color: rgba(255,255,255,0.90) !important; }
 
     /* Filter pill */
     .filter-pill { transition: all 0.15s; }
     .filter-pill:hover { border-color: var(--terracotta) !important; color: var(--terracotta) !important; }
 
-    /* Primary btn — bouncier */
-    .ps-btn-primary { transition: transform 0.14s cubic-bezier(0.34,1.6,0.64,1), box-shadow 0.14s ease; }
-    .ps-btn-primary:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 10px 28px rgba(224,62,26,0.36); }
-    .ps-btn-primary:active { transform: translateY(0) scale(0.98); }
+    /* Primary btn */
+    .ps-btn-primary { transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease; }
+    .ps-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(168,92,82,0.30); }
+    .ps-btn-primary:active { transform: translateY(0); }
 
     /* Ghost btn */
     .ps-btn-ghost { transition: all 0.15s; }
-    .ps-btn-ghost:hover { border-color: var(--ink) !important; color: var(--ink) !important; }
+    .ps-btn-ghost:hover { border-color: var(--ink-40) !important; color: var(--ink) !important; background: var(--cream) !important; }
 
     /* Affiliate & ship links */
     .aff-link { transition: all 0.15s; }
@@ -117,25 +117,13 @@ const initStyles = () => {
     .ship-link { transition: all 0.15s; }
     .ship-link:hover { border-color: var(--cobalt) !important; background: var(--cobalt-dim) !important; }
 
-    /* Grain overlay for texture */
-    .grain::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-      border-radius: inherit;
-      pointer-events: none;
-      opacity: 0.5;
-    }
-
     /* Animations */
-    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
     @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
-    @keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
     @keyframes float1 { 0%,100%{transform:translateY(0) rotate(-3deg);} 50%{transform:translateY(-10px) rotate(-3deg);} }
     @keyframes float2 { 0%,100%{transform:translateY(0) rotate(2deg);} 50%{transform:translateY(-14px) rotate(2deg);} }
     @keyframes float3 { 0%,100%{transform:translateY(0) rotate(-1deg);} 50%{transform:translateY(-7px) rotate(-1deg);} }
-    @keyframes crownPop { 0%,100%{transform:translateY(0) scale(1);} 50%{transform:translateY(-4px) scale(1.05);} }
     @keyframes shimmer { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
 
     .f1{animation:fadeUp 0.5s ease both;}
@@ -165,8 +153,8 @@ const initStyles = () => {
     /* Mobile bottom nav */
     .mobile-nav {
       position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--terracotta);
-      border-top: 3px solid rgba(0,0,0,0.12);
+      background: var(--ink);
+      border-top: 1px solid rgba(255,255,255,0.08);
       display: none;
       z-index: 300;
       padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -180,18 +168,13 @@ const initStyles = () => {
       flex: 1; display: flex; flex-direction: column; align-items: center;
       justify-content: center; gap: 3px; padding: 10px 4px 8px;
       background: none; border: none; cursor: pointer;
-      color: rgba(255,255,255,0.45); font-family: var(--sans);
-      font-size: 10px; font-weight: 500; letter-spacing: 0.2px;
+      color: rgba(255,255,255,0.40); font-family: var(--sans);
+      font-size: 10px; font-weight: 400; letter-spacing: 0.3px;
       transition: color 0.15s;
     }
-    .mobile-nav-btn.active { color: white; font-weight: 700; }
-    .mobile-nav-btn:hover  { color: rgba(255,255,255,0.90); }
+    .mobile-nav-btn.active { color: var(--terracotta-mid); font-weight: 600; }
+    .mobile-nav-btn:hover  { color: rgba(255,255,255,0.70); }
     .mobile-nav-icon { font-size: 18px; line-height: 1; }
-      position: absolute;
-      width: 28px;
-      height: 28px;
-      opacity: 0.12;
-    }
   `;
   document.head.appendChild(s);
 };
@@ -358,14 +341,14 @@ const TA = ({ label, ...p }) => (
 
 function PrimaryBtn({ children, sm = false, style = {}, ...p }) {
   return (
-    <button className="ps-btn-primary" style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", gap:7, padding:sm?"9px 18px":"14px 28px", background:"var(--terracotta)", color:"white", border:"none", borderRadius:99, fontSize:sm?12:14, fontFamily:"var(--sans)", fontWeight:700, cursor:"pointer", whiteSpace:"nowrap", ...style }} {...p}>
+    <button className="ps-btn-primary" style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", gap:6, padding:sm?"8px 16px":"12px 24px", background:"var(--terracotta)", color:"white", border:"none", borderRadius:4, fontSize:sm?12:13, fontFamily:"var(--sans)", fontWeight:500, cursor:"pointer", letterSpacing:"0.3px", whiteSpace:"nowrap", ...style }} {...p}>
       {children}
     </button>
   );
 }
 function GhostBtn({ children, style = {}, ...p }) {
   return (
-    <button className="ps-btn-ghost" style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", padding:"12px 22px", background:"transparent", color:"var(--ink-70)", border:"1.5px solid var(--ink-15)", borderRadius:99, fontSize:14, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer", transition:"all .15s", ...style }} {...p}>
+    <button className="ps-btn-ghost" style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", padding:"11px 20px", background:"transparent", color:"var(--ink-70)", border:"1px solid var(--ink-15)", borderRadius:4, fontSize:13, fontFamily:"var(--sans)", fontWeight:400, cursor:"pointer", transition:"all .15s", ...style }} {...p}>
       {children}
     </button>
   );
@@ -583,9 +566,9 @@ function PuzzleCard({ puzzle, onOpen, onRequest, saved, onToggleSave, animClass 
 
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:11, borderTop:"1px solid var(--ink-08)" }}>
             <span style={{ fontSize:10, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>♥ {puzzle.saves} · {timeAgo(puzzle.created_at)}</span>
-            <button className="card-action" style={{ padding:"7px 16px", background:"var(--terracotta-bg)", color:"var(--terracotta)", border:"1.5px solid var(--terracotta)", borderRadius:99, fontSize:11, fontFamily:"var(--sans)", fontWeight:700, cursor:"pointer", transition:"all .2s" }}
+            <button className="card-action" style={{ padding:"6px 14px", background:"transparent", color:"var(--terracotta)", border:"1px solid var(--terracotta)", borderRadius:4, fontSize:11, fontFamily:"var(--sans)", fontWeight:500, cursor:"pointer", transition:"all .2s", letterSpacing:"0.2px" }}
               onClick={e=>{ e.stopPropagation(); onRequest(puzzle); }}>
-              {puzzle.listing_type === "free" || puzzle.listing_type === "pickup" ? "Claim →" : "Request →"}
+              {puzzle.listing_type === "free" || puzzle.listing_type === "pickup" ? "Claim" : "Request"}
             </button>
           </div>
         </div>
@@ -599,9 +582,9 @@ function HowItWorks() {
   return (
     <div style={{ borderRadius:16, overflow:"hidden", marginBottom:40, border:"1px solid var(--ink-08)", boxShadow:"0 4px 20px rgba(28,18,8,0.06)" }}>
       {/* Header band */}
-      <div style={{ background:"linear-gradient(90deg, #FF6B35 0%, #F7931E 100%)", padding:"14px 28px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div style={{ fontSize:12, fontWeight:700, color:"white", textTransform:"uppercase", letterSpacing:"2px", fontFamily:"var(--sans)" }}>🧩 How it works</div>
-        <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)", fontFamily:"var(--sans)", fontWeight:500 }}>No fees. No platform cuts. Just puzzles finding new homes.</div>
+      <div style={{ background:"#2C1F0E", padding:"14px 28px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ fontSize:10, fontWeight:500, color:"rgba(255,255,255,0.55)", textTransform:"uppercase", letterSpacing:"2.5px", fontFamily:"var(--sans)" }}>How it works</div>
+        <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)", fontFamily:"var(--sans)", fontWeight:300 }}>No fees. No platform cuts. Just puzzles finding new homes.</div>
       </div>
       {/* Cards row */}
       <div className="how-grid" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", background:"var(--warm-white)" }}>
@@ -1211,7 +1194,7 @@ export default function PuzzleSwap() {
   const SectionHead = ({ title, sub, action }) => (
     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:32 }}>
       <div>
-        <h2 style={{ fontSize:30, fontFamily:"var(--serif)", color:"var(--ink)", letterSpacing:"-0.3px", marginBottom:4 }}>{title}</h2>
+        <h2 style={{ fontSize:34, fontFamily:"var(--serif)", color:"var(--ink)", fontStyle:"italic", fontWeight:400, marginBottom:4 }}>{title}</h2>
         {sub && <p style={{ fontSize:14, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>{sub}</p>}
       </div>
       {action}
@@ -1248,13 +1231,13 @@ export default function PuzzleSwap() {
     <div style={{ minHeight:"100vh", background:"var(--warm-white)" }}>
 
       {/* ── HEADER ── */}
-      <header style={{ background:"var(--terracotta)", borderBottom:"3px solid rgba(0,0,0,0.12)", position:"sticky", top:0, zIndex:200 }}>
+      <header style={{ background:"#2C1F0E", borderBottom:"1px solid rgba(255,255,255,0.06)", position:"sticky", top:0, zIndex:200 }}>
         <div style={{ maxWidth:1160, margin:"0 auto", padding:"0 20px", height:58, display:"grid", gridTemplateColumns:"auto 1fr auto", alignItems:"center", gap:12 }}>
 
           {/* LEFT — logo */}
           <div style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", flexShrink:0 }} onClick={()=>nav("browse")}>
-            <div style={{ fontSize:22 }}>🧩</div>
-            <span style={{ fontSize:20, fontFamily:"var(--serif)", color:"white", fontWeight:700, whiteSpace:"nowrap", letterSpacing:"0.3px" }}>puzzleswap</span>
+            <div style={{ fontSize:20 }}>🧩</div>
+            <span style={{ fontSize:19, fontFamily:"var(--serif)", color:"white", fontWeight:500, fontStyle:"italic", whiteSpace:"nowrap", letterSpacing:"0.5px" }}>puzzleswap</span>
           </div>
 
           {/* CENTER — search + nav (desktop only) */}
@@ -1544,38 +1527,48 @@ export default function PuzzleSwap() {
         {!showList && !sel && !viewProfile && view === "browse" && (
           <>
             {/* Hero */}
-            <div className="hero-grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", borderRadius:20, overflow:"hidden", marginBottom:40, boxShadow:"0 8px 40px rgba(28,18,8,0.14)", position:"relative" }}>
-              {/* Left: warm golden yellow — like puzzle box art */}
-              <div style={{ padding:"48px 44px", display:"flex", flexDirection:"column", justifyContent:"center", background:"linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)", position:"relative", overflow:"hidden", minHeight:320 }}>
-                <div style={{ position:"absolute", top:-40, right:-40, width:200, height:200, borderRadius:"50%", background:"rgba(255,255,255,0.08)", pointerEvents:"none" }} />
-                <div style={{ position:"absolute", bottom:-30, left:-20, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.06)", pointerEvents:"none" }} />
-                <PuzzlePieceDecor size={64} color="white" opacity={0.12} style={{ position:"absolute", top:20, right:28, transform:"rotate(20deg)" }} />
-                <PuzzlePieceDecor size={36} color="white" opacity={0.08} style={{ position:"absolute", bottom:30, right:60, transform:"rotate(-15deg)" }} />
+            <div className="hero-grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", borderRadius:16, overflow:"hidden", marginBottom:40, boxShadow:"0 8px 40px rgba(44,31,14,0.12)", border:"1px solid var(--ink-08)", position:"relative" }}>
+              {/* Left: deep warm brown — editorial, sophisticated */}
+              <div style={{ padding:"52px 48px", display:"flex", flexDirection:"column", justifyContent:"center", background:"#2C1F0E", position:"relative", overflow:"hidden", minHeight:340 }}>
+                {/* Subtle botanical texture */}
+                <div style={{ position:"absolute", top:-30, right:-30, width:200, height:200, borderRadius:"50%", background:"rgba(168,92,82,0.08)", pointerEvents:"none" }} />
+                <div style={{ position:"absolute", bottom:-20, left:-20, width:140, height:140, borderRadius:"50%", background:"rgba(74,112,85,0.06)", pointerEvents:"none" }} />
+                <PuzzlePieceDecor size={48} color="white" opacity={0.04} style={{ position:"absolute", top:28, right:36, transform:"rotate(20deg)" }} />
+                <PuzzlePieceDecor size={28} color="white" opacity={0.03} style={{ position:"absolute", bottom:40, right:80, transform:"rotate(-12deg)" }} />
 
-                <div style={{ display:"inline-flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.2)", borderRadius:99, padding:"5px 14px", fontSize:11, color:"white", fontWeight:700, letterSpacing:"1px", marginBottom:20, alignSelf:"flex-start", textTransform:"uppercase" }}>
-                  🧩 Free Puzzle Trading
+                <div style={{ display:"inline-flex", alignItems:"center", gap:6, background:"rgba(168,92,82,0.15)", border:"1px solid rgba(168,92,82,0.20)", borderRadius:2, padding:"4px 12px", fontSize:10, color:"rgba(194,112,104,0.90)", fontWeight:500, letterSpacing:"2px", marginBottom:24, alignSelf:"flex-start", textTransform:"uppercase", fontFamily:"var(--sans)" }}>
+                  Free Puzzle Trading
                 </div>
-                <h1 style={{ fontSize:44, fontFamily:"var(--serif)", color:"white", lineHeight:1.08, marginBottom:16, fontWeight:700 }}>
-                  Done with it?<br />Pass it on! 🎉
+                <h1 style={{ fontSize:44, fontFamily:"var(--serif)", color:"white", lineHeight:1.08, marginBottom:18, fontWeight:400, fontStyle:"italic" }}>
+                  Done with it?<br /><span style={{ color:"#C27068", fontStyle:"normal" }}>Pass it on.</span>
                 </h1>
-                <p style={{ fontSize:15, color:"rgba(255,255,255,0.88)", fontFamily:"var(--sans)", lineHeight:1.7, marginBottom:30, maxWidth:310, fontWeight:500 }}>
-                  Trade completed puzzles with fellow puzzlers. Swap, gift, or sell — local meetup or shipped nationwide.
+                <p style={{ fontSize:14, color:"rgba(255,255,255,0.48)", fontFamily:"var(--sans)", lineHeight:1.75, marginBottom:32, maxWidth:300, fontWeight:300 }}>
+                  Trade completed puzzles with people who'll actually do them. Swap, gift, or sell — local meetup or shipped nationwide.
                 </p>
                 {!currentUser ? (
-                  <div style={{ display:"flex", gap:10 }}>
-                    <button className="ps-btn-primary" onClick={()=>{setAuthTab("signup");setShowAuth(true);}} style={{ padding:"13px 24px", background:"white", color:"var(--terracotta)", border:"none", borderRadius:99, fontSize:15, fontFamily:"var(--sans)", fontWeight:700, cursor:"pointer" }}>Start swapping →</button>
-                    <button className="ps-btn-ghost" onClick={()=>{setAuthTab("login");setShowAuth(true);}} style={{ padding:"13px 20px", background:"transparent", color:"white", border:"2px solid rgba(255,255,255,0.4)", borderRadius:99, fontSize:14, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer" }}>Log in</button>
+                  <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                    <button className="ps-btn-primary" onClick={()=>{setAuthTab("signup");setShowAuth(true);}}
+                      style={{ padding:"12px 26px", background:"var(--terracotta)", color:"white", border:"none", borderRadius:4, fontSize:14, fontFamily:"var(--sans)", fontWeight:500, cursor:"pointer", letterSpacing:"0.2px" }}>
+                      Start swapping
+                    </button>
+                    <button onClick={()=>{setAuthTab("login");setShowAuth(true);}}
+                      style={{ padding:"12px 20px", background:"transparent", color:"rgba(255,255,255,0.50)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:4, fontSize:14, fontFamily:"var(--sans)", fontWeight:400, cursor:"pointer" }}>
+                      Log in
+                    </button>
                   </div>
                 ) : (
-                  <button className="ps-btn-primary" onClick={()=>setShowList(true)} style={{ alignSelf:"flex-start", padding:"13px 24px", background:"white", color:"var(--terracotta)", border:"none", borderRadius:99, fontSize:15, fontFamily:"var(--sans)", fontWeight:700, cursor:"pointer" }}>+ List a puzzle</button>
+                  <button className="ps-btn-primary" onClick={()=>setShowList(true)}
+                    style={{ alignSelf:"flex-start", padding:"12px 26px", background:"var(--terracotta)", color:"white", border:"none", borderRadius:4, fontSize:14, fontFamily:"var(--sans)", fontWeight:500, cursor:"pointer" }}>
+                    + List a puzzle
+                  </button>
                 )}
               </div>
 
-              {/* Right: soft warm background with floating cards */}
-              <div className="hero-right" style={{ background:"linear-gradient(160deg, #FFF8EE 0%, #FFE4C0 100%)", position:"relative", overflow:"hidden", minHeight:300 }}>
-                <div style={{ position:"absolute", top:0, right:0, width:160, height:160, background:"var(--terracotta)", clipPath:"polygon(100% 0, 0 0, 100% 100%)", opacity:0.08 }} />
-                <PuzzlePieceDecor size={90} color="var(--terracotta)" opacity={0.07} style={{ position:"absolute", bottom:-20, right:-10, transform:"rotate(-10deg)" }} />
-                <PuzzlePieceDecor size={52} color="var(--amber)" opacity={0.10} style={{ position:"absolute", top:20, left:12, transform:"rotate(30deg)" }} />
+              {/* Right: warm linen with floating cards */}
+              <div className="hero-right" style={{ background:"linear-gradient(145deg, #EFE8D8 0%, #F7F2EA 100%)", position:"relative", overflow:"hidden", minHeight:300 }}>
+                <div style={{ position:"absolute", top:0, right:0, width:120, height:120, background:"var(--terracotta)", clipPath:"polygon(100% 0, 0 0, 100% 100%)", opacity:0.07 }} />
+                <PuzzlePieceDecor size={80} color="var(--tan)" opacity={0.25} style={{ position:"absolute", bottom:-16, right:-8, transform:"rotate(-10deg)" }} />
+                <PuzzlePieceDecor size={44} color="var(--terracotta)" opacity={0.12} style={{ position:"absolute", top:24, left:12, transform:"rotate(30deg)" }} />
 
                 <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", width:320, height:260 }}>
                   {[
@@ -1605,33 +1598,33 @@ export default function PuzzleSwap() {
               <div style={{ overflowX:"auto", paddingBottom:2 }}>
                 <div style={{ display:"flex", gap:8, minWidth:"max-content" }}>
                   {[
-                    ["All",        "All",        "",   "#FF6B35", "#FFF0EC"],
-                    ["Collage",    "Collage",    "🎲", "#7A3A9A", "#F5EEFF"],
-                    ["Landscape",  "Landscape",  "🌄", "#2A7A2A", "#EDFAED"],
-                    ["Nightscape", "Nightscape", "🌃", "#1A6BAF", "#E8F4FF"],
-                    ["Animals",    "Animals",    "🦁", "#C47A00", "#FFF8E0"],
-                    ["Fine Art",   "Fine Art",   "🖼️", "#C0392B", "#FFECEC"],
-                    ["Travel",     "Travel",     "✈️", "#0A8A7A", "#E6F7F5"],
-                    ["Food",       "Food",       "🍰", "#E03E8A", "#FFE8F5"],
-                    ["Seasonal",   "Seasonal",   "🍂", "#B05A00", "#FFF3E0"],
-                    ["Other",      "Other",      "🧩", "#555", "#F5F5F5"],
+                    ["All",        "All",        "",   "#2C1F0E", "#F7F2EA"],
+                    ["Collage",    "Collage",    "🎲", "#5A3A6A", "#F0EBF5"],
+                    ["Landscape",  "Landscape",  "🌄", "#3A6048", "#EAF2ED"],
+                    ["Nightscape", "Nightscape", "🌃", "#2A4A72", "#E8EFF8"],
+                    ["Animals",    "Animals",    "🦁", "#7A5020", "#F5EDE0"],
+                    ["Fine Art",   "Fine Art",   "🖼️", "#7A2A2A", "#F5E8E8"],
+                    ["Travel",     "Travel",     "✈️", "#2A5A5A", "#E8F2F2"],
+                    ["Food",       "Food",       "🍰", "#8A3A60", "#F5E8EF"],
+                    ["Seasonal",   "Seasonal",   "🍂", "#6A3A18", "#F2EAE0"],
+                    ["Other",      "Other",      "🧩", "#4A4A4A", "#EDEDED"],
                   ].map(([v, label, icon, activeColor, activeBg]) => {
                     const active = catF === v;
                     return (
                       <button key={v} onClick={()=>setCatF(v)} style={{
-                        display:"flex", flexDirection:"column", alignItems:"center", gap:5,
-                        padding:"12px 18px", minWidth:72,
-                        background: active ? activeColor : "var(--cream)",
-                        border: `2px solid ${active ? activeColor : "var(--tan)"}`,
-                        borderRadius:12, cursor:"pointer", transition:"all .15s",
-                        boxShadow: active ? `0 4px 16px ${activeColor}44` : "none",
-                        transform: active ? "translateY(-2px)" : "none",
+                        display:"flex", flexDirection:"column", alignItems:"center", gap:4,
+                        padding:"10px 16px", minWidth:68,
+                        background: active ? activeColor : "var(--warm-white)",
+                        border: `1px solid ${active ? activeColor : "var(--ink-15)"}`,
+                        borderRadius:6, cursor:"pointer", transition:"all .18s",
+                        boxShadow: active ? `0 2px 12px ${activeColor}33` : "none",
+                        transform: active ? "translateY(-1px)" : "none",
                       }}>
-                        {icon && <span style={{ fontSize:22, lineHeight:1 }}>{icon}</span>}
+                        {icon && <span style={{ fontSize:18, lineHeight:1 }}>{icon}</span>}
                         <span style={{
-                          fontSize:11, fontWeight:700, fontFamily:"var(--sans)",
-                          color: active ? "white" : "var(--ink-70)",
-                          whiteSpace:"nowrap",
+                          fontSize:10, fontWeight:active?600:400, fontFamily:"var(--sans)",
+                          color: active ? "white" : "var(--ink-40)",
+                          whiteSpace:"nowrap", letterSpacing:"0.5px", textTransform:"uppercase",
                         }}>{label}</span>
                       </button>
                     );
