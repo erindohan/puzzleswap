@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 // ─── Supabase client ──────────────────────────────────────────────────────────
@@ -224,7 +224,7 @@ const TRADE_OPTS  = ["Local","Will Ship","Both"];
 const CAT_OPT     = CATEGORIES.filter(c => c !== "All");
 const EMOJIS = ["🏔️","🌊","🌸","🌆","🗺️","🌌","🦁","🐬","🌻","🦋","🚂","🏡","🎨","🌍","🗼","🏰","🌹","🦊","🎲","🐶","🐱","🦅","🏛️","🎠","🍭","🥣","📚","🎸","⚽","🍰","🧁","🍕","🌮","🍜","🍓","🎄","🌾","🎃"];
 const AFFILIATE_TAG      = "puzzleswap-20";
-const PIRATESHIP_REF_URL = "https://www.pirateship.com?ref=puzzleswap";
+const PIRATESHIP_REF_URL = "https://www.pirateship.com";
 const BOOST_PRICE = "$1.99";
 const BOOST_MS    = 7 * 864e5;
 
@@ -385,7 +385,7 @@ function PirateshipBlock({ context = "detail" }) {
             style={{ background:"none", border:"none", cursor:"pointer", fontSize:13, color:"var(--ink-40)", padding:2, flexShrink:0 }}>✕</button>
         )}
       </a>
-      <div style={{ fontSize:10, color:"var(--ink-40)", fontFamily:"var(--sans)", marginTop:4, paddingLeft:2 }}>puzzleswap may earn a referral fee — never affects your price.</div>
+      <div style={{ fontSize:10, color:"var(--ink-40)", fontFamily:"var(--sans)", marginTop:4, paddingLeft:2 }}>Pirateship is not affiliated with puzzleswap — just a genuinely good deal for shipping.</div>
     </div>
   );
 }
@@ -394,7 +394,10 @@ function PirateshipBlock({ context = "detail" }) {
 function RequestModal({ puzzle, userOf, onClose, onSend }) {
   const owner = userOf(puzzle);
   const [step, setStep] = useState("form");
-  const [offerType, setOfferType] = useState("swap");
+  const [offerType, setOfferType] = useState(
+    puzzle.listing_type === "free" || puzzle.listing_type === "pickup" ? "claim" :
+    puzzle.listing_type === "offer" ? "cash" : "swap"
+  );
   const [swapDesc, setSwapDesc] = useState("");
   const [topUp, setTopUp] = useState("");
   const [offerAmt, setOfferAmt] = useState("");
@@ -603,6 +606,142 @@ function HowItWorks() {
 }
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
+// ─── InboxCard ────────────────────────────────────────────────────────────────
+function InboxCard({ r, onRead, onAccept, onDecline, onReply }) {
+  const [showReply, setShowReply] = useState(false);
+  const [replyText, setReplyText] = useState(r.seller_reply || "");
+  const [replySaved, setReplySaved] = useState(!!r.seller_reply);
+
+  const statusColor = {
+    accepted: "var(--sage)",
+    declined: "var(--terracotta)",
+    pending:  "var(--amber)",
+  }[r.status || "pending"];
+
+  const statusBg = {
+    accepted: "var(--sage-bg)",
+    declined: "var(--terracotta-bg)",
+    pending:  "var(--amber-bg)",
+  }[r.status || "pending"];
+
+  const statusLabel = {
+    accepted: "✓ Accepted",
+    declined: "✕ Declined",
+    pending:  "● Pending",
+  }[r.status || "pending"];
+
+  const handleSaveReply = () => {
+    onReply(replyText);
+    setReplySaved(true);
+    setShowReply(false);
+  };
+
+  return (
+    <div style={{ background:"var(--warm-white)", borderRadius:12, border:`1px solid ${!r.read?"var(--terracotta)":"var(--ink-08)"}`, overflow:"hidden", boxShadow:!r.read?"0 2px 16px rgba(200,90,48,0.12)":"0 1px 4px rgba(26,21,16,0.05)", transition:"all .2s" }}>
+
+      {/* Header */}
+      <div style={{ padding:"16px 20px 12px", borderBottom:"1px solid var(--ink-08)" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+            {!r.read && <span style={{ width:8, height:8, borderRadius:"50%", background:"var(--terracotta)", flexShrink:0, display:"inline-block" }} />}
+            <span style={{ fontSize:15, fontFamily:"var(--serif)", color:"var(--ink)", fontWeight:600 }}>{r.sender_name}</span>
+            <span style={{ fontSize:12, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>wants your</span>
+            <span style={{ fontSize:12, fontWeight:600, color:"var(--ink)", fontFamily:"var(--sans)" }}>{r.puzzle_title}</span>
+          </div>
+          <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
+            <span style={{ fontSize:10, fontWeight:600, padding:"3px 8px", background:statusBg, color:statusColor, borderRadius:99, fontFamily:"var(--sans)" }}>{statusLabel}</span>
+            <span style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>{timeAgo(r.created_at)}</span>
+          </div>
+        </div>
+
+        {/* Offer badges */}
+        <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:8 }}>
+          {r.offer_type && (
+            <span style={{ fontSize:10, fontWeight:600, padding:"2px 8px", background:"var(--cobalt-bg)", color:"var(--cobalt)", borderRadius:3, fontFamily:"var(--sans)" }}>
+              {r.offer_type==="cash"?"💵 Cash offer":r.offer_type==="swap"?"⇄ Swap":r.offer_type==="swap_plus"?"⇄ Swap + top-up":"Offer"}
+            </span>
+          )}
+          {r.offer_amt && <span style={{ fontSize:10, padding:"2px 8px", background:"var(--sage-bg)", color:"var(--sage)", borderRadius:3, fontFamily:"var(--sans)", fontWeight:600 }}>${r.offer_amt}</span>}
+          {r.top_up && <span style={{ fontSize:10, padding:"2px 8px", background:"var(--amber-bg)", color:"var(--amber)", borderRadius:3, fontFamily:"var(--sans)", fontWeight:600 }}>+${r.top_up} top-up</span>}
+        </div>
+      </div>
+
+      {/* Body */}
+      <div style={{ padding:"12px 20px" }}>
+        {r.swap_desc && (
+          <div style={{ fontSize:13, color:"var(--ink-70)", fontFamily:"var(--sans)", marginBottom:8 }}>
+            <span style={{ fontWeight:600, color:"var(--ink)" }}>Offering: </span><em>{r.swap_desc}</em>
+          </div>
+        )}
+        {r.message && (
+          <div style={{ fontSize:13, color:"var(--ink-70)", fontFamily:"var(--sans)", background:"var(--cream)", padding:"10px 14px", borderRadius:6, lineHeight:1.65, marginBottom:12 }}>
+            "{r.message}"
+          </div>
+        )}
+
+        {/* Seller reply shown if exists */}
+        {r.seller_reply && (
+          <div style={{ fontSize:13, color:"var(--sage)", fontFamily:"var(--sans)", background:"var(--sage-bg)", padding:"10px 14px", borderRadius:6, lineHeight:1.65, marginBottom:12, border:"1px solid rgba(61,107,69,0.15)" }}>
+            <span style={{ fontWeight:600, display:"block", marginBottom:3, fontSize:11, textTransform:"uppercase", letterSpacing:".5px" }}>Your reply</span>
+            {r.seller_reply}
+          </div>
+        )}
+
+        {/* Accepted — show contact email */}
+        {r.status === "accepted" && r.sender_email && (
+          <div style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px", background:"var(--sage-bg)", borderRadius:8, marginBottom:12, border:"1px solid rgba(61,107,69,0.2)" }}>
+            <span style={{ fontSize:18 }}>✉️</span>
+            <div>
+              <div style={{ fontSize:12, fontWeight:600, color:"var(--sage)", fontFamily:"var(--sans)", marginBottom:2 }}>Trade accepted — reach out to coordinate</div>
+              <a href={`mailto:${r.sender_email}`} style={{ fontSize:13, color:"var(--cobalt)", fontFamily:"var(--sans)", fontWeight:600 }}>{r.sender_email}</a>
+            </div>
+          </div>
+        )}
+
+        {/* Reply box */}
+        {showReply && (
+          <div style={{ marginBottom:12 }}>
+            <textarea
+              value={replyText}
+              onChange={e=>setReplyText(e.target.value)}
+              placeholder="Write a reply to the requester…"
+              style={{ width:"100%", padding:"10px 12px", background:"var(--warm-white)", border:"1px solid var(--ink-15)", borderRadius:8, fontSize:13, fontFamily:"var(--sans)", color:"var(--ink)", resize:"vertical", minHeight:80 }}
+            />
+            <div style={{ display:"flex", gap:8, marginTop:8 }}>
+              <button onClick={()=>setShowReply(false)} style={{ padding:"7px 14px", background:"none", border:"1px solid var(--ink-15)", borderRadius:6, fontSize:12, fontFamily:"var(--sans)", cursor:"pointer", color:"var(--ink-70)" }}>Cancel</button>
+              <button onClick={handleSaveReply} style={{ padding:"7px 16px", background:"var(--ink)", color:"white", border:"none", borderRadius:6, fontSize:12, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer" }}>Save reply</button>
+            </div>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        {r.status === "pending" && (
+          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+            <button onClick={()=>{ onAccept(); onRead(); }}
+              style={{ padding:"8px 18px", background:"var(--sage)", color:"white", border:"none", borderRadius:6, fontSize:13, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer", transition:"opacity .15s" }}>
+              ✓ Accept
+            </button>
+            <button onClick={()=>{ onDecline(); onRead(); }}
+              style={{ padding:"8px 18px", background:"none", color:"var(--terracotta)", border:"1px solid var(--terracotta)", borderRadius:6, fontSize:13, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer" }}>
+              ✕ Decline
+            </button>
+            <button onClick={()=>{ setShowReply(s=>!s); onRead(); }}
+              style={{ padding:"8px 18px", background:"none", color:"var(--ink-70)", border:"1px solid var(--ink-15)", borderRadius:6, fontSize:13, fontFamily:"var(--sans)", fontWeight:500, cursor:"pointer" }}>
+              ↩ Reply
+            </button>
+          </div>
+        )}
+        {r.status !== "pending" && !showReply && (
+          <button onClick={()=>setShowReply(s=>!s)}
+            style={{ padding:"6px 14px", background:"none", color:"var(--ink-40)", border:"1px solid var(--ink-08)", borderRadius:6, fontSize:12, fontFamily:"var(--sans)", cursor:"pointer" }}>
+            {r.seller_reply ? "Edit reply" : "↩ Add a reply"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Modal (must be outside main component to prevent input focus loss) ───────
 function Modal({ onClose, children, wide }) {
   return (
@@ -680,6 +819,8 @@ export default function PuzzleSwap() {
   };
 
   const markRead = async (requestId) => {
+    const req = requests.find(r => r.id === requestId);
+    if (!req || req.read) return;
     await sb.from("requests").update({ read: true }).eq("id", requestId);
     setRequests(prev => prev.map(r => r.id === requestId ? {...r, read: true} : r));
     setUnread(prev => Math.max(0, prev - 1));
@@ -803,14 +944,33 @@ export default function PuzzleSwap() {
       puzzle_title: reqModal.title,
       sender_id:    currentUser.id,
       sender_name:  currentUser.name,
+      sender_email: currentUser.email,
       seller_id:    reqModal.user_id,
       offer_type:   offerType,
       message:      msg,
       swap_desc:    swapDesc,
       top_up:       topUp,
       offer_amt:    offerAmt,
+      status:       "pending",
       read:         false,
     });
+  };
+
+  const handleAccept = async (requestId) => {
+    await sb.from("requests").update({ status:"accepted", read:true }).eq("id", requestId);
+    setRequests(prev => prev.map(r => r.id===requestId ? {...r, status:"accepted", read:true} : r));
+    setUnread(prev => Math.max(0, prev-1));
+  };
+
+  const handleDecline = async (requestId) => {
+    await sb.from("requests").update({ status:"declined", read:true }).eq("id", requestId);
+    setRequests(prev => prev.map(r => r.id===requestId ? {...r, status:"declined", read:true} : r));
+    setUnread(prev => Math.max(0, prev-1));
+  };
+
+  const handleReply = async (requestId, reply) => {
+    await sb.from("requests").update({ seller_reply:reply, read:true }).eq("id", requestId);
+    setRequests(prev => prev.map(r => r.id===requestId ? {...r, seller_reply:reply, read:true} : r));
   };
 
   // ─── Derived lists ────────────────────────────────────────────────────────────
@@ -1342,33 +1502,14 @@ export default function PuzzleSwap() {
             {requests.length === 0
               ? <EmptyState icon="📬" title="No requests yet" sub="When someone requests one of your puzzles, it'll show up here." />
               : (
-                <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                <div style={{ display:"flex", flexDirection:"column", gap:16, maxWidth:720 }}>
                   {requests.map(r => (
-                    <div key={r.id} onClick={()=>markRead(r.id)}
-                      style={{ background:"var(--warm-white)", borderRadius:10, border:`1px solid ${r.read?"var(--ink-08)":"var(--terracotta)"}`, padding:"18px 20px", cursor:"pointer", boxShadow: r.read?"none":"0 2px 12px rgba(200,90,48,0.10)", transition:"all .15s" }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8, gap:12 }}>
-                        <div>
-                          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
-                            {!r.read && <span style={{ width:8, height:8, borderRadius:"50%", background:"var(--terracotta)", display:"inline-block", flexShrink:0 }} />}
-                            <span style={{ fontSize:15, fontFamily:"var(--serif)", color:"var(--ink)" }}>{r.sender_name}</span>
-                            <span style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>wants your <strong>{r.puzzle_title}</strong></span>
-                          </div>
-                          <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-                            {r.offer_type && (
-                              <span style={{ fontSize:10, fontWeight:600, padding:"2px 8px", background:"var(--cobalt-bg)", color:"var(--cobalt)", borderRadius:3, fontFamily:"var(--sans)" }}>
-                                {r.offer_type==="cash"?"💵 Cash offer":r.offer_type==="swap"?"⇄ Swap":r.offer_type==="swap_plus"?"⇄ Swap + top-up":"Offer"}
-                              </span>
-                            )}
-                            {r.offer_amt && <span style={{ fontSize:10, padding:"2px 8px", background:"var(--sage-bg)", color:"var(--sage)", borderRadius:3, fontFamily:"var(--sans)", fontWeight:600 }}>${r.offer_amt}</span>}
-                            {r.top_up && <span style={{ fontSize:10, padding:"2px 8px", background:"var(--amber-bg)", color:"var(--amber)", borderRadius:3, fontFamily:"var(--sans)", fontWeight:600 }}>+${r.top_up} top-up</span>}
-                          </div>
-                        </div>
-                        <span style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)", whiteSpace:"nowrap", flexShrink:0 }}>{timeAgo(r.created_at)}</span>
-                      </div>
-                      {r.swap_desc && <div style={{ fontSize:13, color:"var(--ink-70)", fontFamily:"var(--sans)", marginBottom:6 }}>Offering: <em>{r.swap_desc}</em></div>}
-                      {r.message && <div style={{ fontSize:13, color:"var(--ink-70)", fontFamily:"var(--sans)", background:"var(--cream)", padding:"10px 12px", borderRadius:6, lineHeight:1.6 }}>"{r.message}"</div>}
-                      {!r.read && <div style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)", marginTop:8 }}>Tap to mark as read</div>}
-                    </div>
+                    <InboxCard key={r.id} r={r}
+                      onRead={()=>markRead(r.id)}
+                      onAccept={()=>handleAccept(r.id)}
+                      onDecline={()=>handleDecline(r.id)}
+                      onReply={(reply)=>handleReply(r.id, reply)}
+                    />
                   ))}
                 </div>
               )
