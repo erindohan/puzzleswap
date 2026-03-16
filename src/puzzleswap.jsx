@@ -270,7 +270,7 @@ function LTBadge({ type, size = "sm" }) {
   const pad = size === "sm" ? "2px 8px" : "4px 12px";
   const fs  = size === "sm" ? 10 : 12;
   return (
-    <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:pad, background:lt.bg, color:lt.color, borderRadius:3, fontSize:fs, fontWeight:600, fontFamily:"var(--sans)", whiteSpace:"nowrap", letterSpacing:"0.3px" }}>
+    <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:pad, background:lt.bg, color:lt.color, borderRadius:99, fontSize:fs, fontWeight:600, fontFamily:"var(--sans)", whiteSpace:"nowrap", letterSpacing:"0.3px" }}>
       <span style={{ fontSize: fs + 1 }}>{lt.icon}</span> {lt.label}
     </span>
   );
@@ -279,7 +279,7 @@ function LTBadge({ type, size = "sm" }) {
 function CondBadge({ cond }) {
   const m = condMeta[cond] || condMeta["Good"];
   return (
-    <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"2px 8px", background:m.bg, color:m.color, borderRadius:3, fontSize:10, fontWeight:500, fontFamily:"var(--sans)", whiteSpace:"nowrap" }}>
+    <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"2px 8px", background:m.bg, color:m.color, borderRadius:99, fontSize:10, fontWeight:500, fontFamily:"var(--sans)", whiteSpace:"nowrap" }}>
       {cond}
     </span>
   );
@@ -319,7 +319,7 @@ function PuzzleBox({ artIdx, emoji, size = "md", category = "", photoUrl = "" })
 
 function PieceCount({ pieces }) {
   return (
-    <div style={{ position:"absolute", top:10, right:10, background:"rgba(28,24,20,0.72)", backdropFilter:"blur(10px)", borderRadius:4, padding:"4px 8px", textAlign:"center" }}>
+    <div style={{ position:"absolute", top:10, right:10, background:"rgba(28,24,20,0.72)", backdropFilter:"blur(10px)", borderRadius:8, padding:"4px 8px", textAlign:"center" }}>
       <div style={{ fontSize:13, fontWeight:600, color:"white", fontFamily:"var(--sans)", lineHeight:1 }}>{pieces >= 1000 ? `${pieces/1000}k` : pieces}</div>
       <div style={{ fontSize:7, color:"rgba(255,255,255,0.5)", fontFamily:"var(--sans)", letterSpacing:"1px", textTransform:"uppercase" }}>pcs</div>
     </div>
@@ -358,14 +358,14 @@ const TA = ({ label, ...p }) => (
 
 function PrimaryBtn({ children, sm = false, style = {}, ...p }) {
   return (
-    <button className="ps-btn-primary" style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", gap:7, padding:sm?"9px 18px":"14px 26px", background:"var(--terracotta)", color:"white", border:"none", borderRadius:6, fontSize:sm?12:14, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer", letterSpacing:"0.2px", whiteSpace:"nowrap", ...style }} {...p}>
+    <button className="ps-btn-primary" style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", gap:7, padding:sm?"9px 18px":"14px 28px", background:"var(--terracotta)", color:"white", border:"none", borderRadius:99, fontSize:sm?12:14, fontFamily:"var(--sans)", fontWeight:700, cursor:"pointer", whiteSpace:"nowrap", ...style }} {...p}>
       {children}
     </button>
   );
 }
 function GhostBtn({ children, style = {}, ...p }) {
   return (
-    <button className="ps-btn-ghost" style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", padding:"12px 20px", background:"transparent", color:"var(--ink-70)", border:"1px solid var(--ink-15)", borderRadius:6, fontSize:14, fontFamily:"var(--sans)", fontWeight:500, cursor:"pointer", transition:"all .15s", ...style }} {...p}>
+    <button className="ps-btn-ghost" style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", padding:"12px 22px", background:"transparent", color:"var(--ink-70)", border:"1.5px solid var(--ink-15)", borderRadius:99, fontSize:14, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer", transition:"all .15s", ...style }} {...p}>
       {children}
     </button>
   );
@@ -573,7 +573,7 @@ function PuzzleCard({ puzzle, onOpen, onRequest, saved, onToggleSave, animClass 
 
         {/* Card body */}
         <div style={{ padding:"13px 15px 15px" }}>
-          <div style={{ fontSize:16, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:2, lineHeight:1.25 }}>{puzzle.title}</div>
+          <div style={{ fontSize:17, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:2, lineHeight:1.2, fontWeight:600 }}>{puzzle.title}</div>
           <div style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)", marginBottom:10 }}>{puzzle.brand}</div>
 
           <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:13 }}>
@@ -583,9 +583,9 @@ function PuzzleCard({ puzzle, onOpen, onRequest, saved, onToggleSave, animClass 
 
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:11, borderTop:"1px solid var(--ink-08)" }}>
             <span style={{ fontSize:10, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>♥ {puzzle.saves} · {timeAgo(puzzle.created_at)}</span>
-            <button className="card-action" style={{ padding:"7px 14px", background:"var(--parchment)", color:"var(--ink)", border:"none", borderRadius:4, fontSize:11, fontFamily:"var(--sans)", fontWeight:600, cursor:"pointer", transition:"all .2s" }}
+            <button className="card-action" style={{ padding:"7px 16px", background:"var(--terracotta-bg)", color:"var(--terracotta)", border:"1.5px solid var(--terracotta)", borderRadius:99, fontSize:11, fontFamily:"var(--sans)", fontWeight:700, cursor:"pointer", transition:"all .2s" }}
               onClick={e=>{ e.stopPropagation(); onRequest(puzzle); }}>
-              {puzzle.listing_type === "free" || puzzle.listing_type === "pickup" ? "Claim" : "Request"} →
+              {puzzle.listing_type === "free" || puzzle.listing_type === "pickup" ? "Claim →" : "Request →"}
             </button>
           </div>
         </div>
@@ -670,12 +670,12 @@ function InboxCard({ r, onRead, onAccept, onDecline, onOpenThread }) {
         {/* Offer badges */}
         <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:8 }}>
           {r.offer_type && (
-            <span style={{ fontSize:10, fontWeight:600, padding:"2px 8px", background:"var(--cobalt-bg)", color:"var(--cobalt)", borderRadius:3, fontFamily:"var(--sans)" }}>
+            <span style={{ fontSize:10, fontWeight:600, padding:"2px 8px", background:"var(--cobalt-bg)", color:"var(--cobalt)", borderRadius:99, fontFamily:"var(--sans)" }}>
               {r.offer_type==="cash"?"💵 Cash offer":r.offer_type==="swap"?"⇄ Swap":r.offer_type==="swap_plus"?"⇄ Swap + top-up":"Offer"}
             </span>
           )}
-          {r.offer_amt && <span style={{ fontSize:10, padding:"2px 8px", background:"var(--sage-bg)", color:"var(--sage)", borderRadius:3, fontFamily:"var(--sans)", fontWeight:600 }}>${r.offer_amt}</span>}
-          {r.top_up && <span style={{ fontSize:10, padding:"2px 8px", background:"var(--amber-bg)", color:"var(--amber)", borderRadius:3, fontFamily:"var(--sans)", fontWeight:600 }}>+${r.top_up} top-up</span>}
+          {r.offer_amt && <span style={{ fontSize:10, padding:"2px 8px", background:"var(--sage-bg)", color:"var(--sage)", borderRadius:99, fontFamily:"var(--sans)", fontWeight:600 }}>${r.offer_amt}</span>}
+          {r.top_up && <span style={{ fontSize:10, padding:"2px 8px", background:"var(--amber-bg)", color:"var(--amber)", borderRadius:99, fontFamily:"var(--sans)", fontWeight:600 }}>+${r.top_up} top-up</span>}
         </div>
       </div>
 
@@ -1253,8 +1253,8 @@ export default function PuzzleSwap() {
 
           {/* LEFT — logo */}
           <div style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", flexShrink:0 }} onClick={()=>nav("browse")}>
-            <div style={{ fontSize:20 }}>🧩</div>
-            <span style={{ fontSize:17, fontFamily:"var(--serif)", color:"white", letterSpacing:"-0.3px", fontStyle:"italic", whiteSpace:"nowrap" }}>puzzleswap</span>
+            <div style={{ fontSize:22 }}>🧩</div>
+            <span style={{ fontSize:20, fontFamily:"var(--serif)", color:"white", fontWeight:700, whiteSpace:"nowrap", letterSpacing:"0.3px" }}>puzzleswap</span>
           </div>
 
           {/* CENTER — search + nav (desktop only) */}
@@ -1452,8 +1452,8 @@ export default function PuzzleSwap() {
                   {/* Meta badges */}
                   <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:20 }}>
                     <CondBadge cond={sel.condition} />
-                    <span style={{ display:"inline-flex", alignItems:"center", padding:"2px 8px", background:"var(--parchment)", color:"var(--ink-70)", borderRadius:3, fontSize:10, fontFamily:"var(--sans)", fontWeight:500 }}>{sel.pieces.toLocaleString()} pieces</span>
-                    {sel.brand && <span style={{ display:"inline-flex", alignItems:"center", padding:"2px 8px", background:"var(--parchment)", color:"var(--ink-70)", borderRadius:3, fontSize:10, fontFamily:"var(--sans)" }}>{sel.brand}</span>}
+                    <span style={{ display:"inline-flex", alignItems:"center", padding:"2px 8px", background:"var(--parchment)", color:"var(--ink-70)", borderRadius:99, fontSize:10, fontFamily:"var(--sans)", fontWeight:500 }}>{sel.pieces.toLocaleString()} pieces</span>
+                    {sel.brand && <span style={{ display:"inline-flex", alignItems:"center", padding:"2px 8px", background:"var(--parchment)", color:"var(--ink-70)", borderRadius:99, fontSize:10, fontFamily:"var(--sans)" }}>{sel.brand}</span>}
                   </div>
 
                   {sel.description && <p style={{ fontSize:15, color:"var(--ink-70)", fontFamily:"var(--sans)", lineHeight:1.8, marginBottom:24 }}>{sel.description}</p>}
@@ -1749,11 +1749,11 @@ export default function PuzzleSwap() {
                               <div style={{ display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
                                 <span style={{ fontSize:10, fontWeight:600, padding:"3px 8px", background:statusBg, color:statusColor, borderRadius:99, fontFamily:"var(--sans)" }}>{statusLabel}</span>
                                 {r.shipping_preference && (
-                                  <span style={{ fontSize:10, padding:"2px 8px", background:"var(--parchment)", color:"var(--ink-70)", borderRadius:3, fontFamily:"var(--sans)" }}>
+                                  <span style={{ fontSize:10, padding:"2px 8px", background:"var(--parchment)", color:"var(--ink-70)", borderRadius:99, fontFamily:"var(--sans)" }}>
                                     {r.shipping_preference === "local" ? "📍 Local meetup" : "📦 Shipping"}
                                   </span>
                                 )}
-                                {r.offer_type && <span style={{ fontSize:10, padding:"2px 8px", background:"var(--cobalt-bg)", color:"var(--cobalt)", borderRadius:3, fontFamily:"var(--sans)", fontWeight:600 }}>
+                                {r.offer_type && <span style={{ fontSize:10, padding:"2px 8px", background:"var(--cobalt-bg)", color:"var(--cobalt)", borderRadius:99, fontFamily:"var(--sans)", fontWeight:600 }}>
                                   {r.offer_type==="cash"?"💵 Cash":r.offer_type==="swap"?"⇄ Swap":r.offer_type==="swap_plus"?"⇄+$":"Offer"}
                                 </span>}
                               </div>
