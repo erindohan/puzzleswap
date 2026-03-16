@@ -1035,6 +1035,8 @@ export default function PuzzleSwap() {
     }
     setUploading(false);
   };
+
+  const handleRemoveListing = async (puzzleId) => {
     await sb.from("puzzles").delete().eq("id", puzzleId);
     await loadPuzzles();
   };
