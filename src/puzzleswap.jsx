@@ -737,12 +737,15 @@ export default function PuzzleSwap() {
       saves: 0,
       boost_expiry: null,
     }).select().single();
-    if (!error) {
-      await loadPuzzles();
-      setShowList(false);
-      setNl({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🧩" });
-      setView("mylistings");
+    if (error) {
+      alert("Could not save puzzle: " + error.message);
+      console.error("Insert error:", error);
+      return;
     }
+    await loadPuzzles();
+    setShowList(false);
+    setNl({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🧩" });
+    setView("mylistings");
   };
 
   const handleRemoveListing = async (puzzleId) => {
@@ -910,7 +913,7 @@ export default function PuzzleSwap() {
             {currentUser ? (
               <>
                 <PrimaryBtn sm onClick={()=>{ setShowList(true); goBack(); setView("browse"); }}>+ List</PrimaryBtn>
-                <div title={currentUser.name} style={{ cursor:"pointer" }} onClick={()=>{ setView("profile"); setProfEdit({...currentUser}); goBack(); }}>
+                <div title={currentUser.name} style={{ cursor:"pointer" }} onClick={()=>{ setView("profile"); setProfEdit({...currentUser}); setSel(null); setViewProf(null); setShowList(false); }}>
                   <Avatar user={currentUser} size={32} />
                 </div>
               </>
@@ -1160,15 +1163,7 @@ export default function PuzzleSwap() {
                 ) : (
                   <PrimaryBtn style={{ alignSelf:"flex-start" }} onClick={()=>setShowList(true)}>+ List a puzzle</PrimaryBtn>
                 )}
-                {/* Stats row */}
-                <div style={{ display:"flex", gap:28, marginTop:32 }}>
-                  {[["147","puzzles listed"],["83","active traders"],["12","trades this week"]].map(([n,l])=>(
-                    <div key={l}>
-                      <div style={{ fontSize:22, fontFamily:"var(--serif)", color:"white" }}>{n}</div>
-                      <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)", fontFamily:"var(--sans)" }}>{l}</div>
-                    </div>
-                  ))}
-                </div>
+              
               </div>
 
               {/* Right: cream with floating puzzle cards — hidden on mobile */}
