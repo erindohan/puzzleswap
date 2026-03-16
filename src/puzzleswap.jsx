@@ -285,27 +285,21 @@ function CondBadge({ cond }) {
   );
 }
 
-// The main visual — a proper illustrated puzzle box
-function PuzzleBox({ artIdx, emoji, size = "md" }) {
+function PuzzleBox({ artIdx, emoji, size = "md", category = "" }) {
   const p = PIECE_PALETTE[artIdx % PIECE_PALETTE.length];
   const h = size === "lg" ? 260 : size === "sm" ? 100 : 180;
   return (
     <div style={{ height: h, background: p.bg, position: "relative", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      {/* Inner mat/mount border — real puzzle boxes have this */}
       <div style={{ position:"absolute", inset:10, border:`1px solid ${p.accent}30`, borderRadius:2 }} />
       <div style={{ position:"absolute", inset:13, border:`1px solid ${p.accent}18`, borderRadius:1 }} />
-      {/* Radial glow */}
       <div style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse at 40% 40%, ${p.accent}30 0%, transparent 65%)` }} />
-      {/* Fine crosshatch texture */}
       <div style={{ position:"absolute", inset:0, backgroundImage:`repeating-linear-gradient(0deg, transparent, transparent 18px, ${p.accent}08 18px, ${p.accent}08 19px), repeating-linear-gradient(90deg, transparent, transparent 18px, ${p.accent}08 18px, ${p.accent}08 19px)` }} />
-      {/* Emoji subject */}
       <div style={{ fontSize: size==="lg"?80:size==="sm"?38:56, position:"relative", zIndex:2, filter:`drop-shadow(0 4px 20px ${p.accent}60) drop-shadow(0 0 40px ${p.accent}30)` }}>
         {emoji || "🧩"}
       </div>
-      {/* Bottom label strip */}
       <div style={{ position:"absolute", bottom:0, left:0, right:0, background:`linear-gradient(transparent, rgba(0,0,0,0.65))`, padding:"16px 12px 8px", display:"flex", justifyContent:"space-between", alignItems:"flex-end" }}>
         <span style={{ fontSize:8, fontFamily:"var(--sans)", fontWeight:600, color:`${p.accent}cc`, letterSpacing:"2px", textTransform:"uppercase" }}>PUZZLE</span>
-        <span style={{ fontSize:8, fontFamily:"var(--sans)", color:"rgba(255,255,255,0.35)", letterSpacing:"1px" }}>JIGSAW</span>
+        <span style={{ fontSize:8, fontFamily:"var(--sans)", color:"rgba(255,255,255,0.35)", letterSpacing:"1px", textTransform:"uppercase" }}>{category || "JIGSAW"}</span>
       </div>
     </div>
   );
@@ -517,7 +511,7 @@ function BoostModal({ puzzle, onClose, onBoost }) {
   return (
     <>
       <div style={{ background:"var(--parchment)", borderRadius:10, overflow:"hidden", marginBottom:22, border:"1px solid var(--tan)" }}>
-        <PuzzleBox artIdx={puzzle.art||0} emoji={puzzle.image||"🧩"} size="sm" />
+        <PuzzleBox artIdx={puzzle.art||0} emoji={puzzle.image||"🧩"} size="sm" category={puzzle.category} />
         <div style={{ padding:"10px 14px" }}>
           <div style={{ fontSize:14, fontFamily:"var(--serif)", color:"var(--ink)" }}>{puzzle.title}</div>
           <div style={{ fontSize:11, color:"var(--ink-70)", fontFamily:"var(--sans)", marginTop:2 }}>{puzzle.pieces.toLocaleString()} pieces</div>
@@ -559,7 +553,7 @@ function PuzzleCard({ puzzle, onOpen, onRequest, saved, onToggleSave, animClass 
       <div style={{ borderRadius:10, overflow:"hidden" }}>
         {/* Art */}
         <div style={{ position:"relative" }}>
-          <PuzzleBox artIdx={puzzle.art||0} emoji={puzzle.image||"🧩"} size="md" />
+          <PuzzleBox artIdx={puzzle.art||0} emoji={puzzle.image||"🧩"} size="md" category={puzzle.category} />
           <PieceCount pieces={puzzle.pieces} />
           <button style={{ position:"absolute", top:10, left:10, background:"rgba(26,21,16,0.55)", backdropFilter:"blur(8px)", border:`1px solid ${saved?"var(--amber)":"rgba(255,255,255,0.15)"}`, borderRadius:5, width:32, height:32, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, color:saved?"var(--amber)":"rgba(255,255,255,0.7)", transition:"all .15s" }}
             onClick={e=>{ e.stopPropagation(); onToggleSave(puzzle.id); }}>
@@ -657,7 +651,7 @@ export default function PuzzleSwap() {
   const [aLoc, setALoc]             = useState("");
   const [aPref, setAPref]           = useState("Both");
   const [aErr, setAErr]             = useState("");
-  const [nl, setNl] = useState({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🧩" });
+  const [nl, setNl] = useState({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🎲" });
   const [profEdit, setProfEdit]     = useState(null);
 
   // ─── Load session + puzzles on mount ────────────────────────────────────────
@@ -760,7 +754,7 @@ export default function PuzzleSwap() {
     }
     await loadPuzzles();
     setShowList(false);
-    setNl({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🧩" });
+    setNl({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🎲" });
     setView("mylistings");
   };
 
@@ -1044,7 +1038,7 @@ export default function PuzzleSwap() {
                   </div>
                 )}
                 <div style={{ position:"relative" }}>
-                  <PuzzleBox artIdx={sel.art||0} emoji={sel.image||"🧩"} size="lg" />
+                  <PuzzleBox artIdx={sel.art||0} emoji={sel.image||"🧩"} size="lg" category={sel.category} />
                   <PieceCount pieces={sel.pieces} />
                   <button onClick={()=>setSaved(s=>s.includes(sel.id)?s.filter(x=>x!==sel.id):[...s,sel.id])}
                     style={{ position:"absolute", top:14, left:14, background:"rgba(28,24,20,0.6)", backdropFilter:"blur(10px)", border:`1px solid ${isSave?"var(--amber)":"rgba(255,255,255,0.15)"}`, borderRadius:6, padding:"7px 13px", cursor:"pointer", fontSize:13, color:isSave?"var(--amber)":"rgba(255,255,255,0.8)", display:"flex", alignItems:"center", gap:5, fontFamily:"var(--sans)" }}>
@@ -1338,7 +1332,7 @@ export default function PuzzleSwap() {
                             <span style={{ fontSize:11, fontWeight:600, color:"var(--amber)", fontFamily:"var(--sans)" }}>Featured · {daysLeft(p)}d left</span>
                           </div>
                         )}
-                        <PuzzleBox artIdx={p.art||0} emoji={p.image||"🧩"} size="sm" />
+                        <PuzzleBox artIdx={p.art||0} emoji={p.image||"🧩"} size="sm" category={p.category} />
                         <div style={{ padding:"12px 14px" }}>
                           <div style={{ fontSize:14, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:2 }}>{p.title}</div>
                           <div style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)", marginBottom:10 }}>{p.pieces.toLocaleString()} pcs · {p.posted}</div>
