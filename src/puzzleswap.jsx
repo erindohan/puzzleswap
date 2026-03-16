@@ -617,6 +617,17 @@ function HowItWorks() {
 }
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
+// ─── Modal (must be outside main component to prevent input focus loss) ───────
+function Modal({ onClose, children, wide }) {
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(28,24,20,0.6)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:999, padding:24, backdropFilter:"blur(6px)", overflowY:"auto", animation:"fadeIn 0.2s ease" }} onClick={onClose}>
+      <div style={{ background:"var(--warm-white)", borderRadius:12, padding:32, maxWidth:wide?520:440, width:"100%", border:"1px solid var(--ink-15)", boxShadow:"0 40px 80px rgba(28,24,20,0.25)", margin:"auto", animation:"slideDown 0.25s ease" }} onClick={e=>e.stopPropagation()}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function PuzzleSwap() {
   const [users, setUsers]           = useState(SEED_USERS);
   const [puzzles, setPuzzles]       = useState(SEED_PUZZLES);
@@ -701,14 +712,6 @@ export default function PuzzleSwap() {
       style={{ padding:"7px 15px", background:active?"var(--terracotta)":"transparent", color:active?"white":"var(--ink-70)", border:`1px solid ${active?"var(--terracotta)":"var(--ink-15)"}`, borderRadius:99, fontSize:12, fontFamily:"var(--sans)", fontWeight:active?600:400, cursor:"pointer", whiteSpace:"nowrap", transition:"all .15s" }}>
       {label}
     </button>
-  );
-
-  const Modal = ({ onClose, children, wide }) => (
-    <div style={{ position:"fixed", inset:0, background:"rgba(28,24,20,0.6)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:999, padding:24, backdropFilter:"blur(6px)", overflowY:"auto", animation:"fadeIn 0.2s ease" }} onClick={onClose}>
-      <div style={{ background:"var(--warm-white)", borderRadius:12, padding:32, maxWidth:wide?520:440, width:"100%", border:"1px solid var(--ink-15)", boxShadow:"0 40px 80px rgba(28,24,20,0.25)", margin:"auto", animation:"slideDown 0.25s ease" }} onClick={e=>e.stopPropagation()}>
-        {children}
-      </div>
-    </div>
   );
 
   const BackBtn = ({ onClick }) => (
