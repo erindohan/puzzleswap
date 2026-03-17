@@ -1,4 +1,3 @@
-// PuzzleSwap build: 2026-03-17 15:44:12
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -1268,25 +1267,29 @@ export default function PuzzleSwap() {
 
   const loadPuzzles = async () => {
     setLoading(true);
-    const { data: puzzleData, error } = await sb.from("puzzles").select("*").order("created_at", { ascending: false });
-    if (error) { console.error("loadPuzzles error:", error); setLoading(false); return; }
-    if (puzzleData) {
-      // Load all unique owner profiles
-      const userIds = [...new Set(puzzleData.map(p => p.user_id))];
-      let profileMap = {};
-      if (userIds.length > 0) {
-        const { data: profileData } = await sb.from("profiles").select("id, name, location, trade_count").in("id", userIds);
-        if (profileData) profileData.forEach(p => { profileMap[p.id] = p; });
+    try {
+      const { data: puzzleData, error } = await sb.from("puzzles").select("*").order("created_at", { ascending: false });
+      if (error) { console.error("loadPuzzles error:", error); return; }
+      if (puzzleData) {
+        const userIds = [...new Set(puzzleData.map(p => p.user_id))];
+        let profileMap = {};
+        if (userIds.length > 0) {
+          const { data: profileData } = await sb.from("profiles").select("id, name, location, trade_count").in("id", userIds);
+          if (profileData) profileData.forEach(p => { profileMap[p.id] = p; });
+        }
+        setPuzzles(puzzleData.map(p => ({
+          ...p,
+          userId: p.user_id,
+          listing_type: p.listing_type,
+          boost_expiry: p.boost_expiry,
+          _owner: profileMap[p.user_id] ? { ...profileMap[p.user_id], tradeCount: profileMap[p.user_id].trade_count } : null
+        })));
       }
-      setPuzzles(puzzleData.map(p => ({
-        ...p,
-        userId: p.user_id,
-        listing_type: p.listing_type,
-        boost_expiry: p.boost_expiry,
-        _owner: profileMap[p.user_id] ? { ...profileMap[p.user_id], tradeCount: profileMap[p.user_id].trade_count } : null
-      })));
+    } catch (e) {
+      console.error("loadPuzzles exception:", e);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const loadSaved = async (userId) => {
@@ -1595,10 +1598,10 @@ export default function PuzzleSwap() {
 
 
   if (loading) return (
-    <div style={{ minHeight:"100vh", background:"var(--warm-white)", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
+    <div style={{ minHeight:"100vh", background:"#FBF8F3", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
       <div style={{ fontSize:40 }}>🧩</div>
-      <div style={{ fontSize:16, fontFamily:"var(--serif)", color:"var(--ink)", fontStyle:"italic" }}>puzzleswap</div>
-      <div style={{ fontSize:12, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>Loading puzzles…</div>
+      <div style={{ fontSize:18, fontFamily:"'Playfair Display', Georgia, serif", color:"#2C1F0E", fontStyle:"italic" }}>puzzleswap</div>
+      <div style={{ fontSize:14, color:"#6B5A44", fontFamily:"'Lato', system-ui, sans-serif" }}>Loading puzzles…</div>
     </div>
   );
 
