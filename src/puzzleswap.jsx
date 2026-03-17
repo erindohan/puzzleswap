@@ -2073,7 +2073,14 @@ export default function PuzzleSwap() {
                   <div style={{ padding:"20px", color:"var(--ink-40)", fontFamily:"var(--sans)", fontSize:15 }}>No puzzles found for "{searchQ}"</div>
                 );
                 return results.map(p => (
-                  <button key={p.id} onClick={()=>{ setSel(p); setShowSearch(false); setSearchQ(""); nav("browse"); }}
+                  <button key={p.id} onClick={()=>{
+                    setShowSearch(false);
+                    setSearchQ("");
+                    setView("browse");
+                    setShowList(false);
+                    setViewProf(null);
+                    setSel(p); // set AFTER goBack-like resets so it isn't wiped
+                  }}
                     style={{ width:"100%", display:"flex", alignItems:"center", gap:14, padding:"14px 20px", background:"none", border:"none", borderBottom:"1px solid var(--ink-08)", cursor:"pointer", textAlign:"left", transition:"background .12s" }}
                     onMouseEnter={e=>e.currentTarget.style.background="var(--cream)"}
                     onMouseLeave={e=>e.currentTarget.style.background="none"}>
@@ -2089,7 +2096,14 @@ export default function PuzzleSwap() {
                 ));
               })()}
               {searchQ.trim() !== "" && (
-                <button onClick={()=>{ setShowSearch(false); setView("browse"); nav("browse"); }}
+                <button onClick={()=>{
+                  setShowSearch(false);
+                  setView("browse");
+                  setSel(null);
+                  setViewProf(null);
+                  setShowList(false);
+                  // searchQ stays set so browse filters by it
+                }}
                   style={{ width:"100%", padding:"14px 20px", background:"var(--cream)", border:"none", borderTop:"1px solid var(--ink-08)", cursor:"pointer", fontSize:14, fontFamily:"var(--sans)", color:"var(--terracotta)", fontWeight:600, textAlign:"left" }}>
                   See all results for "{searchQ}" →
                 </button>
