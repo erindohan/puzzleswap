@@ -445,9 +445,10 @@ function isLocalZip(zipA, zipB) {
   return zipA.slice(0,4) === zipB.slice(0,4);
 }
 
-function RequestModal({ puzzle, userOf, currentUser, onClose, onSend }) {
+function RequestModal({ puzzle, userOf, currentUser, onClose, onSend, myListings = [] }) {
   const owner = userOf(puzzle);
   const local = isLocalZip(currentUser?.location, owner?.location);
+  const hasListing = myListings.length > 0;
 
   const [step, setStep] = useState("form");
   const [shipPref, setShipPref] = useState(
@@ -550,6 +551,11 @@ function RequestModal({ puzzle, userOf, currentUser, onClose, onSend }) {
       {/* Swap offer */}
       {puzzle.listing_type === "swap" && (
         <div style={{ marginBottom:18 }}>
+          {!hasListing && (
+            <div style={{ background:"var(--amber-bg)", border:"1px solid var(--amber-dim)", borderRadius:8, padding:"12px 14px", marginBottom:14, fontSize:13, color:"var(--amber)", fontFamily:"var(--sans)", lineHeight:1.55 }}>
+              ⚠️ Swaps require you to have a puzzle listed. <strong>List one first</strong> so the other person knows what they're getting.
+            </div>
+          )}
           <div style={{ fontSize:11, fontWeight:600, color:"var(--ink-70)", textTransform:"uppercase", letterSpacing:".8px", fontFamily:"var(--sans)", marginBottom:10 }}>Your offer</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:14 }}>
             {[["swap","⇄","Even Swap","Puzzle for puzzle"],["swap_plus","⇄ +$","Swap + Top-up","Your puzzle + cash top-up"]].map(([v,icon,label,sub])=>(
@@ -1033,6 +1039,66 @@ function CategoryBanner({ catF }) {
   );
 }
 
+// ─── OfferModal — propose trade for unlisted puzzle ──────────────────────────
+function OfferModal({ targetUser, currentUser, myListings, onClose, onSend }) {
+  const [msg, setMsg]       = useState("");
+  const [puzzle, setPuzzle] = useState(myListings[0]?.id || "");
+  const [sent, setSent]     = useState(false);
+
+  if (sent) return (
+    <div style={{ textAlign:"center", padding:"20px 0" }}>
+      <div style={{ fontSize:40, marginBottom:12 }}>✉️</div>
+      <div style={{ fontSize:20, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:8 }}>Message sent!</div>
+      <div style={{ fontSize:14, color:"var(--ink-40)", fontFamily:"var(--sans)", marginBottom:24 }}>
+        {targetUser.name.split(" ")[0]} will see your proposal in their inbox.
+      </div>
+      <PrimaryBtn onClick={onClose}>Done</PrimaryBtn>
+    </div>
+  );
+
+  return (
+    <>
+      <div style={{ fontSize:22, fontFamily:"var(--serif)", color:"var(--ink)", fontWeight:700, marginBottom:6 }}>
+        Propose a trade
+      </div>
+      <div style={{ fontSize:14, color:"var(--ink-40)", fontFamily:"var(--sans)", marginBottom:20 }}>
+        to {targetUser.name}
+      </div>
+      {myListings.length > 0 ? (
+        <div style={{ marginBottom:18 }}>
+          <div style={{ fontSize:12, fontWeight:700, color:"var(--ink)", textTransform:"uppercase", letterSpacing:"0.8px", fontFamily:"var(--sans)", marginBottom:7 }}>
+            I'm offering
+          </div>
+          <select value={puzzle} onChange={e=>setPuzzle(e.target.value)}
+            style={{ width:"100%", padding:"12px 15px", background:"var(--warm-white)", border:"1px solid var(--ink-15)", borderRadius:6, fontSize:16, fontFamily:"var(--sans)", color:"var(--ink)" }}>
+            {myListings.map(p => (
+              <option key={p.id} value={p.id}>{p.title} ({p.pieces.toLocaleString()} pcs · {p.condition})</option>
+            ))}
+          </select>
+        </div>
+      ) : (
+        <div style={{ background:"var(--amber-bg)", border:"1px solid var(--amber-dim)", borderRadius:8, padding:"12px 14px", marginBottom:18, fontSize:13, color:"var(--amber)", fontFamily:"var(--sans)", lineHeight:1.55 }}>
+          ⚠️ You don't have any puzzles listed yet. List one first so they know what you're offering.
+        </div>
+      )}
+      <div style={{ marginBottom:18 }}>
+        <div style={{ fontSize:12, fontWeight:700, color:"var(--ink)", textTransform:"uppercase", letterSpacing:"0.8px", fontFamily:"var(--sans)", marginBottom:7 }}>
+          What are you looking for?
+        </div>
+        <textarea value={msg} onChange={e=>setMsg(e.target.value)}
+          placeholder={`Hi ${targetUser.name.split(" ")[0]}! I'm looking for a puzzle like… and I have … to offer in return.`}
+          style={{ width:"100%", padding:"12px 15px", background:"var(--warm-white)", border:"1px solid var(--ink-15)", borderRadius:6, fontSize:16, fontFamily:"var(--sans)", color:"var(--ink)", resize:"vertical", minHeight:110 }} />
+      </div>
+      <div style={{ display:"flex", gap:10 }}>
+        <GhostBtn style={{ flex:1 }} onClick={onClose}>Cancel</GhostBtn>
+        <PrimaryBtn style={{ flex:2 }} onClick={()=>{ if(msg.trim()) { onSend({ targetUserId: targetUser.id, offeredPuzzleId: puzzle, msg }); setSent(true); } }}>
+          Send proposal
+        </PrimaryBtn>
+      </div>
+    </>
+  );
+}
+
 export default function PuzzleSwap() {
   const [puzzles, setPuzzles]       = useState([]);
   const [currentUser, setCU]        = useState(null);
@@ -1387,7 +1453,17 @@ export default function PuzzleSwap() {
     setView("browse");
   };
 
-  const handleReq = p => { if (!currentUser) { setAuthTab("signup"); setShowAuth(true); } else setReqModal(p); };
+  const handleSendOffer = async ({ targetUserId, offeredPuzzleId, msg }) => {
+    if (!currentUser) return;
+    const offeredPuzzle = myListings.find(p => p.id === offeredPuzzleId);
+    await sb.from("notifications").insert({
+      user_id: targetUserId,
+      type:    "trade_offer",
+      title:   `Trade proposal from ${currentUser.name}`,
+      body:    `${currentUser.name} wants to trade${offeredPuzzle ? ` "${offeredPuzzle.title}"` : ""} with you. Message: "${msg}"`,
+      read:    false,
+    });
+  };
 
   const handleSendRequest = async ({ offerType, swapDesc, topUp, offerAmt, msg, shipPref }) => {
     if (!reqModal || !currentUser) return;
@@ -1794,6 +1870,17 @@ export default function PuzzleSwap() {
                 <StatBox num={puzzles.filter(p=>p.user_id===viewProfile.id).length} label="Listings" />
                 <StatBox num={viewProfile.memberSince} label="Member since" />
               </div>
+              {/* Offer a trade — for unlisted puzzles */}
+              {currentUser && currentUser.id !== viewProfile.id && (
+                <div style={{ marginTop:20, paddingTop:20, borderTop:"1px solid var(--ink-08)" }}>
+                  <div style={{ fontSize:13, color:"var(--ink-70)", fontFamily:"var(--sans)", marginBottom:12 }}>
+                    Don't see what you want? Message {viewProfile.name.split(" ")[0]} directly to propose a trade for something not listed.
+                  </div>
+                  <GhostBtn onClick={()=>setOfferModal({ user: viewProfile })} style={{ fontSize:13 }}>
+                    💬 Propose an unlisted trade
+                  </GhostBtn>
+                </div>
+              )}
             </div>
             <SectionHead title="Their puzzles" />
             <Grid onSel={setSel} onReq={handleReq} savedList={savedList} onToggleSave={handleToggleSave} items={puzzles.filter(p=>p.user_id===viewProfile.id)} />
@@ -2159,11 +2246,22 @@ export default function PuzzleSwap() {
       {/* ── REQUEST MODAL ── */}
       {reqModal && (
         <Modal onClose={()=>setReqModal(null)} wide>
-          <RequestModal puzzle={reqModal} userOf={userOf} currentUser={currentUser} onClose={()=>setReqModal(null)} onSend={handleSendRequest} />
+          <RequestModal puzzle={reqModal} userOf={userOf} currentUser={currentUser} myListings={myListings} onClose={()=>setReqModal(null)} onSend={handleSendRequest} />
         </Modal>
       )}
 
-      {/* ── SEARCH OVERLAY ── */}
+      {/* ── OFFER MODAL (unlisted trade proposal) ── */}
+      {offerModal && currentUser && (
+        <Modal onClose={()=>setOfferModal(null)}>
+          <OfferModal
+            targetUser={offerModal.user}
+            currentUser={currentUser}
+            myListings={myListings}
+            onClose={()=>setOfferModal(null)}
+            onSend={handleSendOffer}
+          />
+        </Modal>
+      )}
       {showSearch && (
         <div className="search-overlay" style={{ position:"fixed", inset:0, background:"rgba(44,31,14,0.40)", zIndex:998, backdropFilter:"blur(4px)" }} onClick={()=>{ setShowSearch(false); setSearchQ(""); }}>
           <div style={{ maxWidth:600, margin:"80px auto 0", padding:"0 16px" }} onClick={e=>e.stopPropagation()}>
