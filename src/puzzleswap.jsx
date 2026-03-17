@@ -1278,7 +1278,12 @@ export default function PuzzleSwap() {
     await loadRequests(currentUser.id);
   };
 
-  // ─── Derived lists ────────────────────────────────────────────────────────────
+  // Initialize profEdit whenever profile view becomes active
+  useEffect(() => {
+    if (view === "profile" && currentUser && !profEdit) {
+      setProfEdit({...currentUser});
+    }
+  }, [view, currentUser]);
   const userOf = p => p._owner || null;
 
   const matchPiece = p => {
@@ -1302,12 +1307,35 @@ export default function PuzzleSwap() {
   }));
 
   const myListings = puzzles.filter(p => currentUser && p.user_id === currentUser.id);
-  const goBack = () => { setSel(null); setViewProf(null); setShowList(false); };
-  const nav    = v  => {
+  const goBack = () => {
+    setSel(null);
+    setViewProf(null);
+    setShowList(false);
+  };
+
+  const nav = v => {
     goBack();
     setView(v);
     if (v === "profile" && currentUser) setProfEdit({...currentUser});
+    // Push to browser history so back button works
+    window.history.pushState({ view: v }, "", window.location.pathname);
   };
+
+  // Listen for browser back button
+  useEffect(() => {
+    const handlePop = (e) => {
+      const v = e.state?.view || "browse";
+      setView(v);
+      setSel(null);
+      setViewProf(null);
+      setShowList(false);
+      if (v === "profile" && currentUser) setProfEdit({...currentUser});
+    };
+    // Set initial history entry so back has somewhere to go
+    window.history.replaceState({ view: "browse" }, "", window.location.pathname);
+    window.addEventListener("popstate", handlePop);
+    return () => window.removeEventListener("popstate", handlePop);
+  }, [currentUser]);
 
   const isBrowse = view==="browse" && !sel && !showList && !viewProfile;
   const isSaved  = view==="saved"  && !sel && !viewProfile;
@@ -1323,8 +1351,8 @@ export default function PuzzleSwap() {
   );
 
   const BackBtn = ({ onClick }) => (
-    <button onClick={onClick} style={{ display:"inline-flex", alignItems:"center", gap:6, color:"var(--ink-70)", background:"none", border:"none", cursor:"pointer", fontSize:13, fontFamily:"var(--sans)", marginBottom:28, padding:0 }}
-      onMouseEnter={e=>e.currentTarget.style.color="var(--ink)"} onMouseLeave={e=>e.currentTarget.style.color="var(--ink-70)"}>
+    <button onClick={()=>{ onClick(); window.history.back(); }} style={{ display:"inline-flex", alignItems:"center", gap:6, color:"var(--ink-40)", background:"none", border:"none", cursor:"pointer", fontSize:15, fontFamily:"var(--sans)", marginBottom:28, padding:0 }}
+      onMouseEnter={e=>e.currentTarget.style.color="var(--ink)"} onMouseLeave={e=>e.currentTarget.style.color="var(--ink-40)"}>
       ← Back
     </button>
   );
@@ -1343,7 +1371,11 @@ export default function PuzzleSwap() {
     <div className="card-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))", gap:22 }}>
       {items.map((p,i) => (
         <PuzzleCard key={p.id} puzzle={p} animClass={`f${Math.min(i+1,6)}`}
-          onOpen={setSel} onRequest={handleReq}
+          onOpen={(puzzle) => {
+            setSel(puzzle);
+            window.history.pushState({ view: "browse", sel: puzzle.id }, "", window.location.pathname);
+          }}
+          onRequest={handleReq}
           saved={savedList.includes(p.id)}
           onToggleSave={handleToggleSave}
         />
@@ -1947,10 +1979,7 @@ export default function PuzzleSwap() {
         )}
 
         {/* ── PROFILE ── */}
-        {!showList && !sel && !viewProfile && view === "profile" && currentUser && (() => {
-          // Ensure profEdit is always initialized when viewing profile
-          if (!profEdit) { setProfEdit({...currentUser}); return null; }
-          return (
+        {!showList && !sel && !viewProfile && view === "profile" && currentUser && profEdit && (
           <div style={{ maxWidth:540 }}>
             <SectionHead title="My profile" />
             <div style={{ background:"var(--warm-white)", border:"1px solid var(--ink-15)", borderRadius:14, padding:28, marginBottom:20 }}>
@@ -1984,8 +2013,7 @@ export default function PuzzleSwap() {
               <button onClick={handleLogout} style={{ background:"none", border:"none", cursor:"pointer", fontSize:16, color:"var(--ink-40)", fontFamily:"var(--sans)", textDecoration:"underline", textUnderlineOffset:"3px" }}>Log out</button>
             </div>
           </div>
-          );
-        })()}
+        )}
       </main>
 
       {/* ── AUTH MODAL ── */}
@@ -2080,6 +2108,7 @@ export default function PuzzleSwap() {
                     setShowList(false);
                     setViewProf(null);
                     setSel(p); // set AFTER goBack-like resets so it isn't wiped
+                    window.history.pushState({ view: "browse", sel: p.id }, "", window.location.pathname);
                   }}
                     style={{ width:"100%", display:"flex", alignItems:"center", gap:14, padding:"14px 20px", background:"none", border:"none", borderBottom:"1px solid var(--ink-08)", cursor:"pointer", textAlign:"left", transition:"background .12s" }}
                     onMouseEnter={e=>e.currentTarget.style.background="var(--cream)"}
