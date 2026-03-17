@@ -257,8 +257,9 @@ const EMOJIS = ["🏔️","🌊","🌸","🌆","🗺️","🌌","🦁","🐬","�
 // 2. Once approved, go to Account Settings → Associate Information
 // 3. Copy your "Associate Store ID" (looks like "yourname-20")
 // 4. Replace "puzzleswap-20" below with your actual ID
-const AFFILIATE_TAG = "puzzleswap-20";
+const AFFILIATE_TAG    = "puzzleswap-20";
 const PIRATESHIP_REF_URL = "https://www.pirateship.com";
+const SUPPORT_EMAIL    = "info@getpuzzleswap.com";
 const BOOST_PRICE = "$1.99";
 const BOOST_MS    = 7 * 864e5;
 
@@ -1066,7 +1067,7 @@ export default function PuzzleSwap() {
   const [nl, setNl]   = useState({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🎲", photo_url:"" });
   const [nlErr, setNlErr]           = useState("");
   const [showSearch, setShowSearch] = useState(false);
-  const [offerModal, setOfferModal] = useState(null);
+  const [navHistory, setNavHistory]  = useState([]);           // in-app back stack
   const [uploading, setUploading]   = useState(false);
   const [editingPuzzle, setEditing] = useState(null);
 
@@ -1263,6 +1264,7 @@ export default function PuzzleSwap() {
     setViewProf(null);
     setShowList(false);
     setShowAuth(false);
+    setNavHistory([]);
     setView("browse");
   };
 
@@ -1483,11 +1485,25 @@ export default function PuzzleSwap() {
     setShowList(false);
   };
 
-  const nav = v => {
-    // Set profEdit FIRST before view changes, so profile never renders with pe=null
-    if (v === "profile" && currentUser) setProfEdit({...currentUser});
+  const nav = (v) => {
+    // Push current state onto history stack before navigating
+    setNavHistory(h => [...h, { view, sel, viewProfile, showList }]);
     goBack();
     setView(v);
+    if (v === "profile" && currentUser) setProfEdit({...currentUser});
+  };
+
+  const goBackInApp = () => {
+    setNavHistory(h => {
+      if (h.length === 0) return h;
+      const prev = h[h.length - 1];
+      setView(prev.view);
+      setSel(prev.sel || null);
+      setViewProf(prev.viewProfile || null);
+      setShowList(prev.showList || false);
+      if (prev.view === "profile" && currentUser) setProfEdit({...currentUser});
+      return h.slice(0, -1);
+    });
   };
 
   const isBrowse    = view==="browse" && !sel && !showList && !viewProfile;
@@ -1677,7 +1693,7 @@ export default function PuzzleSwap() {
         {/* ── PUZZLE DETAIL ── */}
         {!showList && sel && selLt && (
             <div style={{ maxWidth:680 }}>
-              <BackBtn onClick={()=>nav("browse")} />
+              <BackBtn onClick={goBackInApp} />
               <div style={{ background:"var(--warm-white)", borderRadius:14, border:"1px solid var(--ink-15)", overflow:"hidden", boxShadow:"var(--shadow-lg)" }}>
                 <div style={{ position:"relative" }}>
                   <PuzzleBox artIdx={sel.art||0} emoji={sel.image||"🧩"} size="lg" category={sel.category} photoUrl={sel.photo_url||""} />
@@ -1763,7 +1779,7 @@ export default function PuzzleSwap() {
         {/* ── OTHER PROFILE ── */}
         {!showList && !sel && viewProfile && (
           <div>
-            <BackBtn onClick={()=>nav("browse")} />
+            <BackBtn onClick={goBackInApp} />
             <div style={{ background:"var(--warm-white)", border:"1px solid var(--ink-15)", borderRadius:14, padding:30, marginBottom:28 }}>
               <div style={{ display:"flex", gap:18, alignItems:"flex-start", marginBottom:22 }}>
                 <Avatar user={viewProfile} size={64} />
@@ -2234,6 +2250,24 @@ export default function PuzzleSwap() {
           request={[...requests, ...sentRequests].find(r => r.id === openThread)}
         />
       )}
+
+      {/* ── FOOTER ── */}
+      <footer style={{ borderTop:"1px solid var(--ink-08)", marginTop:60, padding:"32px 20px", background:"var(--warm-white)" }}>
+        <div style={{ maxWidth:1160, margin:"0 auto", display:"flex", flexWrap:"wrap", justifyContent:"space-between", alignItems:"center", gap:16 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <span style={{ fontSize:20 }}>🧩</span>
+            <span style={{ fontSize:16, fontFamily:"var(--serif)", color:"var(--ink)", fontWeight:700, fontStyle:"italic" }}>puzzleswap</span>
+          </div>
+          <div style={{ display:"flex", gap:24, flexWrap:"wrap", alignItems:"center" }}>
+            <a href={`mailto:${SUPPORT_EMAIL}`} style={{ fontSize:13, color:"var(--ink-40)", fontFamily:"var(--sans)", textDecoration:"none" }}
+              onMouseEnter={e=>e.currentTarget.style.color="var(--terracotta)"}
+              onMouseLeave={e=>e.currentTarget.style.color="var(--ink-40)"}>
+              {SUPPORT_EMAIL}
+            </a>
+            <span style={{ fontSize:12, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>© {new Date().getFullYear()} puzzleswap · Free puzzle trading</span>
+          </div>
+        </div>
+      </footer>
 
     </div>
   );
