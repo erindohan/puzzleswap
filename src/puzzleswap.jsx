@@ -1324,10 +1324,12 @@ export default function PuzzleSwap() {
     setRequests(prev => prev.filter(r => r.id !== requestId));
   };
 
-  const [offerModal, setOfferModal] = useState(null); // { user } — for unlisted trade offers
+  const handleCancelRequest = async (requestId) => {
     await sb.from("requests").update({ status:"withdrawn" }).eq("id", requestId);
     setSent(prev => prev.map(r => r.id === requestId ? {...r, status:"withdrawn"} : r));
   };
+
+  const [offerModal, setOfferModal] = useState(null); // { user } — for unlisted trade offers
 
   const handleDeleteRequest = async (requestId) => {
     await sb.from("requests").delete().eq("id", requestId);
