@@ -459,6 +459,7 @@ function RequestModal({ puzzle, userOf, currentUser, onClose, onSend }) {
   const [swapDesc, setSwapDesc]   = useState("");
   const [topUp, setTopUp]         = useState("");
   const [offerAmt, setOfferAmt]   = useState("");
+  const [willingToDrive, setWillingToDrive] = useState(false);
   const [msg, setMsg]             = useState(
     puzzle.listing_type === "free" || puzzle.listing_type === "pickup"
       ? `Hi ${owner?.name}! I'd love to claim "${puzzle.title}".`
@@ -504,14 +505,14 @@ function RequestModal({ puzzle, userOf, currentUser, onClose, onSend }) {
           <div style={{ fontSize:11, fontWeight:600, color:"var(--ink-70)", textTransform:"uppercase", letterSpacing:".8px", fontFamily:"var(--sans)", marginBottom:8 }}>
             How would you like to swap?
             {local && <span style={{ marginLeft:6, fontSize:10, color:"var(--sage)", fontWeight:500, textTransform:"none", letterSpacing:0 }}>📍 You're within ~15 miles</span>}
-            {!local && currentUser?.location && owner?.location && <span style={{ marginLeft:6, fontSize:10, color:"var(--cobalt)", fontWeight:500, textTransform:"none", letterSpacing:0 }}>📦 Too far for local meetup</span>}
+            {!local && currentUser?.location && owner?.location && <span style={{ marginLeft:6, fontSize:10, color:"var(--cobalt)", fontWeight:500, textTransform:"none", letterSpacing:0 }}>📦 Different areas</span>}
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
             {[
               ["local","📍","Local meetup","Meet up to exchange in person"],
               ["ship","📦","Ship to each other","Each person mails their puzzle"],
             ].map(([v,icon,label,sub])=>{
-              const disabled = v === "local" && !local;
+              const disabled = v === "local" && !local && !willingToDrive;
               return (
                 <button key={v} onClick={()=>{ if(!disabled) setShipPref(v); }}
                   style={{ padding:"12px", background:shipPref===v?"var(--cream)":disabled?"var(--parchment)":"var(--warm-white)", border:`1.5px solid ${shipPref===v?"var(--terracotta)":disabled?"var(--ink-08)":"var(--ink-15)"}`, borderRadius:8, cursor:disabled?"not-allowed":"pointer", textAlign:"left", transition:"all .15s", opacity:disabled?0.5:1 }}>
@@ -522,6 +523,16 @@ function RequestModal({ puzzle, userOf, currentUser, onClose, onSend }) {
               );
             })}
           </div>
+          {/* Willing to drive option — shown when ZIPs are far apart */}
+          {!local && currentUser?.location && owner?.location && (
+            <label style={{ display:"flex", alignItems:"center", gap:8, marginTop:10, cursor:"pointer" }}>
+              <input type="checkbox" checked={willingToDrive} onChange={e=>{ setWillingToDrive(e.target.checked); if(e.target.checked) setShipPref("local"); else setShipPref("ship"); }}
+                style={{ width:16, height:16, accentColor:"var(--terracotta)", cursor:"pointer" }} />
+              <span style={{ fontSize:13, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>
+                I'm willing to drive further to meet up
+              </span>
+            </label>
+          )}
         </div>
       )}
 
@@ -1031,8 +1042,8 @@ export default function PuzzleSwap() {
   const [notifications, setNotifs]  = useState([]);
   const [unreadNotifs, setUnreadN]  = useState(0);
   const [unreadCount, setUnread]    = useState(0);
-  const [openThread, setOpenThread] = useState(null); // request id of open thread
-  const [threads, setThreads]       = useState({});   // { requestId: [messages] }
+  const [openThread, setOpenThread] = useState(null);
+  const [threads, setThreads]       = useState({});
   const [unreadMsgs, setUnreadMsgs] = useState(0);
   const [aEmail, setAEmail]         = useState("");
   const [aPass, setAPass]           = useState("");
@@ -1040,9 +1051,12 @@ export default function PuzzleSwap() {
   const [aLoc, setALoc]             = useState("");
   const [aPref, setAPref]           = useState("Both");
   const [aErr, setAErr]             = useState("");
-  const [nl, setNl] = useState({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🎲", photo_url:"" });
-  const [nlErr, setNlErr] = useState("");
-  const [showSearch, setShowSearch]  = useState(false);
+  const [nl, setNl]   = useState({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🎲", photo_url:"" });
+  const [nlErr, setNlErr]           = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const [offerModal, setOfferModal] = useState(null);
+  const [uploading, setUploading]   = useState(false);
+  const [editingPuzzle, setEditing] = useState(null);
 
   // ─── Load session + puzzles on mount ────────────────────────────────────────
   useEffect(() => {
@@ -1271,9 +1285,6 @@ export default function PuzzleSwap() {
     setView("mylistings");
   };
 
-  const [uploading, setUploading]   = useState(false);
-  const [editingPuzzle, setEditing] = useState(null); // puzzle being edited
-
   const handlePhotoUpload = async (file) => {
     if (!file || !currentUser) return;
     const ext  = file.name.split(".").pop();
@@ -1394,8 +1405,6 @@ export default function PuzzleSwap() {
     await sb.from("requests").update({ status:"withdrawn" }).eq("id", requestId);
     setSent(prev => prev.map(r => r.id === requestId ? {...r, status:"withdrawn"} : r));
   };
-
-  const [offerModal, setOfferModal] = useState(null); // { user } — for unlisted trade offers
 
   const handleDeleteRequest = async (requestId) => {
     await sb.from("requests").delete().eq("id", requestId);
