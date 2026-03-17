@@ -858,14 +858,26 @@ export default function PuzzleSwap() {
 
   // ─── Load session + puzzles on mount ────────────────────────────────────────
   useEffect(() => {
-    // Check existing session
     sb.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) loadProfile(session.user.id);
+      // else: loading will clear once loadPuzzles() finishes
     });
-    // Listen for auth changes
     const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) loadProfile(session.user.id);
-      else { setCU(null); setSaved([]); }
+      if (session?.user) {
+        loadProfile(session.user.id);
+      } else {
+        // Full state reset on auth logout event
+        setCU(null);
+        setSaved([]);
+        setRequests([]);
+        setSent([]);
+        setThreads({});
+        setOpenThread(null);
+        setUnread(0);
+        setUnreadMsgs(0);
+        setProfEdit(null);
+        setView("browse");
+      }
     });
     loadPuzzles();
     return () => subscription.unsubscribe();
@@ -1015,7 +1027,20 @@ export default function PuzzleSwap() {
 
   const handleLogout = async () => {
     await sb.auth.signOut();
-    setCU(null); setSaved([]); setView("browse");
+    setCU(null);
+    setSaved([]);
+    setRequests([]);
+    setSent([]);
+    setThreads({});
+    setOpenThread(null);
+    setUnread(0);
+    setUnreadMsgs(0);
+    setProfEdit(null);
+    setSel(null);
+    setViewProf(null);
+    setShowList(false);
+    setShowAuth(false);
+    setView("browse");
   };
 
   // ─── Listings ────────────────────────────────────────────────────────────────
@@ -1124,9 +1149,15 @@ export default function PuzzleSwap() {
   // ─── Profile save ─────────────────────────────────────────────────────────────
   const saveProfile = async () => {
     if (!profEdit) return;
-    await sb.from("profiles").update({ name: profEdit.name, location: profEdit.location, trade_preference: profEdit.trade_preference, bio: profEdit.bio }).eq("id", currentUser.id);
-    setCU({ ...profEdit });
+    await sb.from("profiles").update({
+      name: profEdit.name,
+      location: profEdit.location,
+      trade_preference: profEdit.trade_preference,
+      bio: profEdit.bio
+    }).eq("id", currentUser.id);
+    setCU({ ...currentUser, ...profEdit });
     setProfEdit(null);
+    setView("browse");
   };
 
   const handleReq = p => { if (!currentUser) { setAuthTab("signup"); setShowAuth(true); } else setReqModal(p); };
@@ -1206,7 +1237,11 @@ export default function PuzzleSwap() {
 
   const myListings = puzzles.filter(p => currentUser && p.user_id === currentUser.id);
   const goBack = () => { setSel(null); setViewProf(null); setShowList(false); };
-  const nav    = v  => { setView(v); goBack(); };
+  const nav    = v  => {
+    goBack();
+    setView(v);
+    if (v === "profile" && currentUser) setProfEdit({...currentUser});
+  };
 
   const isBrowse = view==="browse" && !sel && !showList && !viewProfile;
   const isSaved  = view==="saved"  && !sel && !viewProfile;
@@ -1848,7 +1883,10 @@ export default function PuzzleSwap() {
         )}
 
         {/* ── PROFILE ── */}
-        {!showList && !sel && !viewProfile && view === "profile" && currentUser && profEdit && (
+        {!showList && !sel && !viewProfile && view === "profile" && currentUser && (() => {
+          // Ensure profEdit is always initialized when viewing profile
+          if (!profEdit) { setProfEdit({...currentUser}); return null; }
+          return (
           <div style={{ maxWidth:540 }}>
             <SectionHead title="My profile" />
             <div style={{ background:"var(--warm-white)", border:"1px solid var(--ink-15)", borderRadius:14, padding:28, marginBottom:20 }}>
@@ -1879,10 +1917,11 @@ export default function PuzzleSwap() {
               </div>
             </div>
             <div style={{ marginTop:14, textAlign:"right" }}>
-              <button onClick={handleLogout} style={{ background:"none", border:"none", cursor:"pointer", fontSize:13, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>Log out</button>
+              <button onClick={handleLogout} style={{ background:"none", border:"none", cursor:"pointer", fontSize:16, color:"var(--ink-40)", fontFamily:"var(--sans)", textDecoration:"underline", textUnderlineOffset:"3px" }}>Log out</button>
             </div>
           </div>
-        )}
+          );
+        })()}
       </main>
 
       {/* ── AUTH MODAL ── */}
