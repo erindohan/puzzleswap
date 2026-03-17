@@ -1433,6 +1433,11 @@ export default function PuzzleSwap() {
   };
 
   // ─── Saves ───────────────────────────────────────────────────────────────────
+  const handleReq = p => {
+    if (!currentUser) { setAuthTab("signup"); setShowAuth(true); }
+    else setReqModal(p);
+  };
+
   const handleToggleSave = async (puzzleId) => {
     if (!currentUser) { setAuthTab("signup"); setShowAuth(true); return; }
     if (savedList.includes(puzzleId)) {
