@@ -1133,7 +1133,8 @@ export default function PuzzleSwap() {
   const [nl, setNl]   = useState({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🎲", photo_url:"" });
   const [nlErr, setNlErr]           = useState("");
   const [showSearch, setShowSearch] = useState(false);
-  const [navHistory, setNavHistory]  = useState([]);           // in-app back stack
+  const [navHistory, setNavHistory]  = useState([]);
+  const [offerModal, setOfferModal]  = useState(null);
   const [uploading, setUploading]   = useState(false);
   const [editingPuzzle, setEditing] = useState(null);
 
