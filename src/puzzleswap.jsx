@@ -73,15 +73,16 @@ const initStyles = () => {
       --serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
       --sans: 'Lato', system-ui, -apple-system, sans-serif;
 
-      /* Elevation shadows — warm-toned */
-      --shadow-xs: 0 1px 3px rgba(44,31,14,0.08), 0 1px 2px rgba(44,31,14,0.06);
-      --shadow-sm: 0 2px 8px rgba(44,31,14,0.08), 0 1px 3px rgba(44,31,14,0.06);
-      --shadow-md: 0 6px 20px rgba(44,31,14,0.09), 0 2px 6px rgba(44,31,14,0.06);
-      --shadow-lg: 0 16px 40px rgba(44,31,14,0.10), 0 4px 12px rgba(44,31,14,0.07);
-      --shadow-xl: 0 28px 60px rgba(44,31,14,0.12), 0 8px 20px rgba(44,31,14,0.08);
+      /* Elevation shadows — bigger, softer, more spread */
+      --shadow-xs: 0 2px 6px rgba(44,31,14,0.07), 0 1px 3px rgba(44,31,14,0.05);
+      --shadow-sm: 0 4px 14px rgba(44,31,14,0.08), 0 2px 6px rgba(44,31,14,0.05);
+      --shadow-md: 0 8px 28px rgba(44,31,14,0.10), 0 3px 10px rgba(44,31,14,0.06);
+      --shadow-lg: 0 20px 56px rgba(44,31,14,0.12), 0 6px 18px rgba(44,31,14,0.07);
+      --shadow-xl: 0 36px 80px rgba(44,31,14,0.14), 0 12px 28px rgba(44,31,14,0.08);
     }
 
-    body { background: var(--warm-white); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.6; }
+    /* 14pt body = 18.67px, 12pt min = 16px */
+    body { background: var(--warm-white); color: var(--ink); font-family: var(--sans); font-size: 18.67px; line-height: 1.65; } /* 14pt */
 
     /* Scrollbar */
     ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -90,7 +91,7 @@ const initStyles = () => {
 
     input, textarea, select {
       font-family: var(--sans);
-      font-size: 16px; /* prevents iOS zoom on focus */
+      font-size: 16px; /* 12pt — prevents iOS auto-zoom */
     }
     input::placeholder, textarea::placeholder { color: var(--ink-40); }
     input:focus, textarea:focus, select:focus {
@@ -99,18 +100,21 @@ const initStyles = () => {
       box-shadow: 0 0 0 3px rgba(122,48,40,0.12) !important;
     }
 
-    /* Card — resting shadow, gentle lift on hover */
+    /* Card — soft resting shadow, big airy lift on hover */
     .ps-card {
-      box-shadow: var(--shadow-sm);
+      box-shadow: 0 2px 8px rgba(44,31,14,0.06), 0 6px 24px rgba(44,31,14,0.04);
       transition: transform 0.25s cubic-bezier(0.34,1.3,0.64,1), box-shadow 0.25s ease;
       cursor: pointer;
     }
-    .ps-card:hover { transform: translateY(-5px) rotate(0.2deg); box-shadow: var(--shadow-xl) !important; }
+    .ps-card:hover {
+      transform: translateY(-7px) rotate(0.15deg);
+      box-shadow: 0 8px 24px rgba(44,31,14,0.08), 0 20px 60px rgba(44,31,14,0.10), 0 40px 80px rgba(44,31,14,0.06) !important;
+    }
     .ps-card:hover .card-action { background: var(--terracotta) !important; color: white !important; border-color: var(--terracotta) !important; }
 
     /* Nav link */
     .nav-link { transition: color 0.15s; }
-    .nav-link:hover { color: var(--ink) !important; }
+    .nav-link:hover { color: var(--terracotta) !important; }
 
     /* Filter pill */
     .filter-pill { transition: all 0.15s; }
@@ -118,7 +122,7 @@ const initStyles = () => {
 
     /* Primary btn */
     .ps-btn-primary { transition: transform 0.15s ease, box-shadow 0.15s ease; }
-    .ps-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(122,48,40,0.28); }
+    .ps-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(122,48,40,0.24), 0 16px 40px rgba(122,48,40,0.12); }
     .ps-btn-primary:active { transform: translateY(0); }
 
     /* Ghost btn */
@@ -130,6 +134,22 @@ const initStyles = () => {
     .aff-link:hover { border-color: var(--amber) !important; background: var(--amber-dim) !important; }
     .ship-link { transition: all 0.15s; }
     .ship-link:hover { border-color: var(--cobalt) !important; background: var(--cobalt-dim) !important; }
+
+    /* Search panel — drops down from header */
+    .search-panel {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: var(--warm-white);
+      box-shadow: 0 8px 32px rgba(44,31,14,0.12), 0 24px 64px rgba(44,31,14,0.08);
+      z-index: 401; padding: 16px 20px 20px;
+      animation: slideDown 0.2s ease;
+      border-bottom: 1px solid var(--ink-08);
+    }
+    .search-backdrop {
+      position: fixed; inset: 0; z-index: 400;
+      background: rgba(44,31,14,0.20);
+      backdrop-filter: blur(2px);
+      animation: fadeIn 0.15s ease;
+    }
 
     /* Animations */
     @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
@@ -156,21 +176,24 @@ const initStyles = () => {
       .card-grid    { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
       .detail-pad   { padding: 20px !important; }
       .form-two-col { grid-template-columns: 1fr !important; }
+      /* Size filters break to new line on mobile */
+      .size-filter-row { width: 100% !important; padding-top: 8px !important; border-top: 1px solid var(--ink-08) !important; margin-top: 2px !important; }
+      .filter-divider  { display: none !important; }
     }
     @media (max-width: 420px) {
-      .card-grid    { grid-template-columns: 1fr !important; }
-      .how-grid     { grid-template-columns: 1fr !important; }
+      .card-grid { grid-template-columns: 1fr !important; }
+      .how-grid  { grid-template-columns: 1fr !important; }
     }
     .mobile-only { display: none; }
+    .size-filter-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
-    /* Mobile bottom nav — warm white, drop shadow up */
+    /* Mobile bottom nav */
     .mobile-nav {
       position: fixed; bottom: 0; left: 0; right: 0;
       background: var(--warm-white);
       border-top: 1px solid var(--ink-15);
-      box-shadow: 0 -4px 20px rgba(44,31,14,0.08);
-      display: none;
-      z-index: 300;
+      box-shadow: 0 -4px 20px rgba(44,31,14,0.08), 0 -12px 40px rgba(44,31,14,0.04);
+      display: none; z-index: 300;
       padding-bottom: env(safe-area-inset-bottom, 0px);
     }
     @media (max-width: 680px) {
@@ -183,12 +206,12 @@ const initStyles = () => {
       justify-content: center; gap: 3px; padding: 10px 4px 8px;
       background: none; border: none; cursor: pointer;
       color: var(--ink-40); font-family: var(--sans);
-      font-size: 11px; font-weight: 400; letter-spacing: 0.2px;
+      font-size: 12px; font-weight: 400; letter-spacing: 0.2px;
       transition: color 0.15s;
     }
     .mobile-nav-btn.active { color: var(--terracotta); font-weight: 700; }
     .mobile-nav-btn:hover  { color: var(--ink); }
-    .mobile-nav-icon { font-size: 20px; line-height: 1; }
+    .mobile-nav-icon { font-size: 22px; line-height: 1; }
   `;
   document.head.appendChild(s);
 };
@@ -552,7 +575,7 @@ function PuzzleCard({ puzzle, onOpen, onRequest, saved, onToggleSave, animClass 
   const lt = LISTING_TYPES[puzzle.listing_type] || LISTING_TYPES.offer;
   return (
     <div className={`ps-card ${animClass}`}
-      style={{ background:"var(--warm-white)", borderRadius:10, border:"1px solid var(--ink-15)", overflow:"visible", boxShadow:"0 2px 12px rgba(26,21,16,0.06)", position:"relative" }}
+      style={{ background:"var(--warm-white)", borderRadius:10, border:"1px solid var(--ink-15)", overflow:"visible", boxShadow:"var(--shadow-sm)", position:"relative" }}
       onClick={()=>onOpen(puzzle)}>
       <div style={{ borderRadius:10, overflow:"hidden" }}>
         {/* Art */}
@@ -594,7 +617,7 @@ function PuzzleCard({ puzzle, onOpen, onRequest, saved, onToggleSave, animClass 
 // ─── How It Works strip ───────────────────────────────────────────────────────
 function HowItWorks() {
   return (
-    <div style={{ borderRadius:16, overflow:"hidden", marginBottom:40, border:"1px solid var(--ink-08)", boxShadow:"0 4px 20px rgba(28,18,8,0.06)" }}>
+    <div style={{ borderRadius:16, overflow:"hidden", marginBottom:40, border:"1px solid var(--ink-08)", boxShadow:"var(--shadow-md)" }}>
       {/* Header band */}
       <div style={{ background:"var(--terracotta)", padding:"14px 28px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,0.85)", textTransform:"uppercase", letterSpacing:"2px", fontFamily:"var(--sans)" }}>How it works</div>
@@ -735,7 +758,7 @@ function MessageThread({ requestId, currentUserId, messages, onSend, onClose, re
 
   return (
     <div style={{ position:"fixed", inset:0, background:"rgba(28,24,20,0.6)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:999, padding:24, backdropFilter:"blur(6px)" }} onClick={onClose}>
-      <div style={{ background:"var(--warm-white)", borderRadius:14, width:"100%", maxWidth:520, maxHeight:"80vh", display:"flex", flexDirection:"column", border:"1px solid var(--ink-15)", boxShadow:"0 40px 80px rgba(28,24,20,0.25)" }} onClick={e=>e.stopPropagation()}>
+      <div style={{ background:"var(--warm-white)", borderRadius:14, width:"100%", maxWidth:520, maxHeight:"80vh", display:"flex", flexDirection:"column", border:"1px solid var(--ink-15)", boxShadow:"var(--shadow-xl)" }} onClick={e=>e.stopPropagation()}>
 
         {/* Header */}
         <div style={{ padding:"16px 20px", borderBottom:"1px solid var(--ink-08)", display:"flex", justifyContent:"space-between", alignItems:"center", flexShrink:0 }}>
@@ -763,7 +786,7 @@ function MessageThread({ requestId, currentUserId, messages, onSend, onClose, re
                   background:isMe?"var(--terracotta)":"var(--cream)",
                   color:isMe?"white":"var(--ink)",
                   fontSize:14, fontFamily:"var(--sans)", lineHeight:1.55,
-                  boxShadow:"0 1px 4px rgba(26,21,16,0.08)"
+                  boxShadow:"var(--shadow-xs)"
                 }}>{m.content}</div>
                 <div style={{ fontSize:10, color:"var(--ink-40)", fontFamily:"var(--sans)", marginTop:3, paddingLeft:4, paddingRight:4 }}>{timeAgo(m.created_at)}</div>
               </div>
@@ -831,7 +854,7 @@ export default function PuzzleSwap() {
   const [aPref, setAPref]           = useState("Both");
   const [aErr, setAErr]             = useState("");
   const [nl, setNl] = useState({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🎲", photo_url:"" });
-  const [profEdit, setProfEdit]     = useState(null);
+  const [showSearch, setShowSearch]  = useState(false);
 
   // ─── Load session + puzzles on mount ────────────────────────────────────────
   useEffect(() => {
@@ -1193,7 +1216,7 @@ export default function PuzzleSwap() {
   // Filter pill
   const FPill = ({label, active, onClick}) => (
     <button className="filter-pill" onClick={onClick}
-      style={{ padding:"7px 15px", background:active?"var(--terracotta)":"transparent", color:active?"white":"var(--ink-70)", border:`1px solid ${active?"var(--terracotta)":"var(--ink-15)"}`, borderRadius:99, fontSize:12, fontFamily:"var(--sans)", fontWeight:active?600:400, cursor:"pointer", whiteSpace:"nowrap", transition:"all .15s" }}>
+      style={{ padding:"8px 16px", background:active?"var(--terracotta)":"transparent", color:active?"white":"var(--ink-40)", border:`1px solid ${active?"var(--terracotta)":"var(--ink-15)"}`, borderRadius:99, fontSize:14, fontFamily:"var(--sans)", fontWeight:active?700:400, cursor:"pointer", whiteSpace:"nowrap", transition:"all .15s" }}>
       {label}
     </button>
   );
@@ -1245,52 +1268,36 @@ export default function PuzzleSwap() {
     <div style={{ minHeight:"100vh", background:"var(--warm-white)" }}>
 
       {/* ── HEADER ── */}
-      <header style={{ background:"var(--warm-white)", borderBottom:"1px solid var(--ink-08)", boxShadow:"var(--shadow-sm)", position:"sticky", top:0, zIndex:200 }}>
+      <header style={{ background:"var(--warm-white)", borderBottom:"1px solid var(--ink-08)", boxShadow:"var(--shadow-md)", position:"sticky", top:0, zIndex:200 }}>
         <div style={{ maxWidth:1160, margin:"0 auto", padding:"0 20px", height:62, display:"grid", gridTemplateColumns:"auto 1fr auto", alignItems:"center", gap:12 }}>
 
-          {/* LEFT — custom SVG logo */}
-          <div style={{ display:"flex", alignItems:"center", gap:10, cursor:"pointer", flexShrink:0 }} onClick={()=>nav("browse")}>
-            {/* Custom puzzle piece mark */}
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="32" height="32" rx="8" fill="#7A3028"/>
-              <path d="M8 8h6.5c0-1.8 1.2-3 2.5-3s2.5 1.2 2.5 3H24v6c1.8 0 3 1.2 3 2.5S25.8 19 24 19v6h-6c0 1.8-1.2 3-2.5 3S13 26.8 13 25H8v-6c-1.8 0-3-1.2-3-2.5S6.2 14 8 14V8z" fill="white" fillOpacity="0.95"/>
-            </svg>
+          {/* LEFT — emoji logo */}
+          <div style={{ display:"flex", alignItems:"center", gap:9, cursor:"pointer", flexShrink:0 }} onClick={()=>nav("browse")}>
+            <div style={{ fontSize:26 }}>🧩</div>
             <span style={{ fontSize:20, fontFamily:"var(--serif)", color:"var(--ink)", fontWeight:700, fontStyle:"italic", whiteSpace:"nowrap" }}>puzzleswap</span>
           </div>
 
-          {/* CENTER — search + nav (desktop only) */}
+          {/* CENTER — search button + nav (desktop only) */}
           <div className="desktop-nav" style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:4 }}>
-            <div style={{ position:"relative", marginRight:4 }}>
-              <span style={{ position:"absolute", left:11, top:"50%", transform:"translateY(-50%)", fontSize:13, color:"var(--ink-40)", userSelect:"none", pointerEvents:"none" }}>⌕</span>
-              <input
-                style={{ width:200, padding:"8px 14px 8px 30px", background:"var(--cream)", border:"1px solid var(--ink-15)", borderRadius:6, fontSize:14, fontFamily:"var(--sans)", color:"var(--ink)", outline:"none", transition:"width .2s ease, box-shadow .15s", boxShadow:"var(--shadow-xs)" }}
-                placeholder="Search puzzles…"
-                value={searchQ}
-                onChange={e=>setSearchQ(e.target.value)}
-                onFocus={e=>{ e.target.style.width="260px"; }}
-                onBlur={e=>{ e.target.style.width="200px"; }}
-              />
-            </div>
+            <button onClick={()=>setShowSearch(true)}
+              style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 16px", background:"var(--cream)", border:"1px solid var(--ink-15)", borderRadius:6, fontSize:14, fontFamily:"var(--sans)", color:"var(--ink-40)", cursor:"pointer", boxShadow:"var(--shadow-xs)", transition:"all .15s", marginRight:8 }}>
+              <span style={{ fontSize:14 }}>⌕</span>
+              <span>Search puzzles…</span>
+            </button>
             <div style={{ width:1, height:18, background:"var(--ink-15)", margin:"0 4px", flexShrink:0 }} />
             {[["Browse","browse",isBrowse],...(currentUser?[["Saved"+(savedList.length?` (${savedList.length})`:""),"saved",isSaved],["My Listings","mylistings",isMyList],["Inbox"+((unreadCount+unreadMsgs)?` (${unreadCount+unreadMsgs})`:""),"inbox",view==="inbox"],["My Requests","outbox",view==="outbox"]]:[])].map(([label,v,active])=>(
               <button key={v} className="nav-link" onClick={()=>nav(v)}
-                style={{ padding:"6px 11px", background:active?"var(--terracotta-bg)":"none", color:active?"var(--terracotta)":"var(--ink-40)", border:"none", borderRadius:6, cursor:"pointer", fontSize:14, fontFamily:"var(--sans)", fontWeight:active?700:400, whiteSpace:"nowrap", transition:"all .15s" }}>
+                style={{ padding:"6px 12px", background:active?"var(--terracotta-bg)":"none", color:active?"var(--terracotta)":"var(--ink-40)", border:"none", borderRadius:6, cursor:"pointer", fontSize:15, fontFamily:"var(--sans)", fontWeight:active?700:400, whiteSpace:"nowrap", transition:"all .15s" }}>
                 {label}
               </button>
             ))}
           </div>
 
-          {/* Mobile center — search bar only */}
+          {/* Mobile center — search button */}
           <div className="mobile-only" style={{ display:"none", flex:1, margin:"0 8px" }}>
-            <div style={{ position:"relative", width:"100%" }}>
-              <span style={{ position:"absolute", left:11, top:"50%", transform:"translateY(-50%)", fontSize:13, color:"var(--ink-40)", pointerEvents:"none" }}>⌕</span>
-              <input
-                style={{ width:"100%", padding:"9px 14px 9px 30px", background:"var(--cream)", border:"1px solid var(--ink-15)", borderRadius:6, fontSize:16, fontFamily:"var(--sans)", color:"var(--ink)", outline:"none" }}
-                placeholder="Search…"
-                value={searchQ}
-                onChange={e=>setSearchQ(e.target.value)}
-              />
-            </div>
+            <button onClick={()=>setShowSearch(true)} style={{ width:"100%", display:"flex", alignItems:"center", gap:8, padding:"10px 14px", background:"var(--cream)", border:"1px solid var(--ink-15)", borderRadius:6, fontSize:16, fontFamily:"var(--sans)", color:"var(--ink-40)", cursor:"pointer", textAlign:"left" }}>
+              <span>⌕</span><span>Search…</span>
+            </button>
           </div>
 
           {/* RIGHT — auth */}
@@ -1337,7 +1344,7 @@ export default function PuzzleSwap() {
 
         {/* ── LIST FORM ── */}
         {showList && currentUser && (
-          <div style={{ background:"var(--warm-white)", borderRadius:14, padding:40, border:"1px solid var(--ink-15)", maxWidth:580, margin:"0 auto", boxShadow:"0 20px 60px rgba(28,24,20,0.10)" }}>
+          <div style={{ background:"var(--warm-white)", borderRadius:14, padding:40, border:"1px solid var(--ink-15)", maxWidth:580, margin:"0 auto", boxShadow:"var(--shadow-lg)" }}>
             <h2 style={{ fontSize:28, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:6 }}>
               {editingPuzzle ? "Edit listing" : "List a Puzzle"}
             </h2>
@@ -1431,7 +1438,7 @@ export default function PuzzleSwap() {
           return (
             <div style={{ maxWidth:680 }}>
               <BackBtn onClick={goBack} />
-              <div style={{ background:"var(--warm-white)", borderRadius:14, border:"1px solid var(--ink-15)", overflow:"hidden", boxShadow:"0 20px 60px rgba(28,24,20,0.10)" }}>
+              <div style={{ background:"var(--warm-white)", borderRadius:14, border:"1px solid var(--ink-15)", overflow:"hidden", boxShadow:"var(--shadow-lg)" }}>
                 <div style={{ position:"relative" }}>
                   <PuzzleBox artIdx={sel.art||0} emoji={sel.image||"🧩"} size="lg" category={sel.category} photoUrl={sel.photo_url||""} />
                   <PieceCount pieces={sel.pieces} />
@@ -1592,7 +1599,7 @@ export default function PuzzleSwap() {
                     { top:0, right:5, anim:"float2 5.2s ease-in-out infinite", artIdx:4, emoji:"🌌", title:"Starry Night", pieces:1500, cond:"Excellent" },
                     { bottom:0, left:"50%", ml:"-70px", anim:"float3 3.8s ease-in-out infinite", artIdx:2, emoji:"🌸", title:"Water Lilies", pieces:750, cond:"Like New" },
                   ].map((c,i) => (
-                    <div key={i} style={{ position:"absolute", top:c.top, left:c.left, right:c.right, bottom:c.bottom, marginLeft:c.ml, width:145, background:"var(--warm-white)", borderRadius:8, border:"1px solid var(--ink-15)", overflow:"hidden", boxShadow:"0 16px 40px rgba(26,21,16,0.14)", animation:c.anim }}>
+                    <div key={i} style={{ position:"absolute", top:c.top, left:c.left, right:c.right, bottom:c.bottom, marginLeft:c.ml, width:145, background:"var(--warm-white)", borderRadius:8, border:"1px solid var(--ink-15)", overflow:"hidden", boxShadow:"var(--shadow-lg)", animation:c.anim }}>
                       <div style={{ height:88, background:PIECE_PALETTE[c.artIdx].bg, display:"flex", alignItems:"center", justifyContent:"center", fontSize:32 }}>{c.emoji}</div>
                       <div style={{ padding:"8px 10px" }}>
                         <div style={{ fontSize:11, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:2 }}>{c.title}</div>
@@ -1651,15 +1658,17 @@ export default function PuzzleSwap() {
 
             {/* ── SECONDARY FILTERS — listing type + size ── */}
             <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:20, alignItems:"center" }}>
-              <span style={{ fontSize:10, color:"var(--ink-40)", fontFamily:"var(--sans)", fontWeight:700, letterSpacing:"1px", textTransform:"uppercase", marginRight:4 }}>Type</span>
+              <span style={{ fontSize:12, color:"var(--ink-40)", fontFamily:"var(--sans)", fontWeight:700, letterSpacing:"1px", textTransform:"uppercase", marginRight:4 }}>Type</span>
               {[["All","All"],["swap","⇄ Swap"],["offer","◈ Offer"],["free","◎ Free"],["pickup","⌖ Pickup"]].map(([v,l])=>(
                 <FPill key={v} label={l} active={typeF===v} onClick={()=>setTypeF(v)} />
               ))}
-              <div style={{ width:1, height:16, background:"var(--ink-15)", margin:"0 4px" }} />
-              <span style={{ fontSize:10, color:"var(--ink-40)", fontFamily:"var(--sans)", fontWeight:700, letterSpacing:"1px", textTransform:"uppercase", marginRight:4 }}>Size</span>
-              {["Any","<500","500–1k","1k–2k","2k+"].map(p=>(
-                <FPill key={p} label={p==="Any"?"Any":p} active={pieceF===p} onClick={()=>setPieceF(p)} />
-              ))}
+              <div className="filter-divider" style={{ width:1, height:16, background:"var(--ink-15)", margin:"0 4px" }} />
+              <div className="size-filter-row">
+                <span style={{ fontSize:12, color:"var(--ink-40)", fontFamily:"var(--sans)", fontWeight:700, letterSpacing:"1px", textTransform:"uppercase", marginRight:4 }}>Size</span>
+                {["Any","<500","500–1k","1k–2k","2k+"].map(p=>(
+                  <FPill key={p} label={p==="Any"?"Any":p} active={pieceF===p} onClick={()=>setPieceF(p)} />
+                ))}
+              </div>
             </div>
 
             {/* Category description banner */}
@@ -1748,7 +1757,7 @@ export default function PuzzleSwap() {
                     const statusBg    = { accepted:"var(--sage-bg)", declined:"var(--terracotta-bg)", pending:"var(--amber-bg)", withdrawn:"var(--parchment)" }[r.status||"pending"];
                     const statusLabel = { accepted:"✓ Accepted", declined:"✕ Declined", pending:"● Pending", withdrawn:"— Withdrawn" }[r.status||"pending"];
                     return (
-                      <div key={r.id} style={{ background:"var(--warm-white)", borderRadius:12, border:"1px solid var(--ink-08)", overflow:"hidden", boxShadow:"0 1px 4px rgba(26,21,16,0.05)" }}>
+                      <div key={r.id} style={{ background:"var(--warm-white)", borderRadius:12, border:"1px solid var(--ink-08)", overflow:"hidden", boxShadow:"var(--shadow-xs)" }}>
                         <div style={{ padding:"16px 20px", borderBottom: r.status==="accepted" ? "1px solid var(--ink-08)" : "none" }}>
                           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12 }}>
                             <div>
@@ -1926,7 +1935,66 @@ export default function PuzzleSwap() {
         </Modal>
       )}
 
-      {/* ── MESSAGE THREAD ── */}
+      {/* ── SEARCH OVERLAY ── */}
+      {showSearch && (
+        <div className="search-overlay" style={{ position:"fixed", inset:0, background:"rgba(44,31,14,0.40)", zIndex:998, backdropFilter:"blur(4px)" }} onClick={()=>{ setShowSearch(false); setSearchQ(""); }}>
+          <div style={{ maxWidth:600, margin:"80px auto 0", padding:"0 16px" }} onClick={e=>e.stopPropagation()}>
+            {/* Search input */}
+            <div style={{ position:"relative", boxShadow:"var(--shadow-xl)" }}>
+              <span style={{ position:"absolute", left:16, top:"50%", transform:"translateY(-50%)", fontSize:18, color:"var(--ink-40)", pointerEvents:"none" }}>⌕</span>
+              <input
+                autoFocus
+                value={searchQ}
+                onChange={e=>setSearchQ(e.target.value)}
+                onKeyDown={e=>{ if(e.key==="Escape"){ setShowSearch(false); setSearchQ(""); }}}
+                placeholder="Search by title, brand, or category…"
+                style={{ width:"100%", padding:"18px 20px 18px 48px", background:"var(--warm-white)", border:"none", borderRadius:"10px 10px 0 0", fontSize:18, fontFamily:"var(--sans)", color:"var(--ink)", outline:"none" }}
+              />
+              <button onClick={()=>{ setShowSearch(false); setSearchQ(""); }}
+                style={{ position:"absolute", right:16, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", fontSize:20, color:"var(--ink-40)", cursor:"pointer", padding:4 }}>✕</button>
+            </div>
+            {/* Autocomplete results */}
+            <div style={{ background:"var(--warm-white)", borderRadius:"0 0 10px 10px", border:"1px solid var(--ink-08)", borderTop:"1px solid var(--ink-15)", maxHeight:"60vh", overflowY:"auto" }}>
+              {searchQ.trim() === "" ? (
+                <div style={{ padding:"20px 20px", color:"var(--ink-40)", fontFamily:"var(--sans)", fontSize:15 }}>
+                  Start typing to search puzzles…
+                </div>
+              ) : (() => {
+                const q = searchQ.toLowerCase();
+                const results = puzzles.filter(p =>
+                  p.title.toLowerCase().includes(q) ||
+                  (p.brand||"").toLowerCase().includes(q) ||
+                  (p.category||"").toLowerCase().includes(q)
+                ).slice(0, 8);
+                if (results.length === 0) return (
+                  <div style={{ padding:"20px", color:"var(--ink-40)", fontFamily:"var(--sans)", fontSize:15 }}>No puzzles found for "{searchQ}"</div>
+                );
+                return results.map(p => (
+                  <button key={p.id} onClick={()=>{ setSel(p); setShowSearch(false); setSearchQ(""); nav("browse"); }}
+                    style={{ width:"100%", display:"flex", alignItems:"center", gap:14, padding:"14px 20px", background:"none", border:"none", borderBottom:"1px solid var(--ink-08)", cursor:"pointer", textAlign:"left", transition:"background .12s" }}
+                    onMouseEnter={e=>e.currentTarget.style.background="var(--cream)"}
+                    onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                    <div style={{ width:44, height:44, background:PIECE_PALETTE[p.art%PIECE_PALETTE.length].bg, borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0, overflow:"hidden" }}>
+                      {p.photo_url ? <img src={p.photo_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} /> : p.image || "🧩"}
+                    </div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:16, fontFamily:"var(--serif)", color:"var(--ink)", fontWeight:700, marginBottom:2, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{p.title}</div>
+                      <div style={{ fontSize:13, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>{p.brand} · {p.pieces.toLocaleString()} pcs · {p.category}</div>
+                    </div>
+                    <LTBadge type={p.listing_type} />
+                  </button>
+                ));
+              })()}
+              {searchQ.trim() !== "" && (
+                <button onClick={()=>{ setShowSearch(false); setView("browse"); nav("browse"); }}
+                  style={{ width:"100%", padding:"14px 20px", background:"var(--cream)", border:"none", borderTop:"1px solid var(--ink-08)", cursor:"pointer", fontSize:14, fontFamily:"var(--sans)", color:"var(--terracotta)", fontWeight:600, textAlign:"left" }}>
+                  See all results for "{searchQ}" →
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {openThread && (
         <MessageThread
           requestId={openThread}
