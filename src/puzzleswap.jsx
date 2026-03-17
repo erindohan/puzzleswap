@@ -246,12 +246,18 @@ const condMeta = {
 };
 
 
-const CATEGORIES = ["All", "Collage", "Landscape", "Nightscape", "Animals", "Fine Art", "Travel", "Seasonal", "Food", "Other"];
+const CATEGORIES = ["All", "Collage", "Landscape", "Nightscape", "Animals", "Fine Art", "Travel", "Seasonal", "Food", "Kids", "Other"];
 const CONDITIONS  = ["Like New","Excellent","Good","Fair"];
 const TRADE_OPTS  = ["Local","Will Ship","Both"];
 const CAT_OPT     = CATEGORIES.filter(c => c !== "All");
 const EMOJIS = ["🏔️","🌊","🌸","🌆","🗺️","🌌","🦁","🐬","🌻","🦋","🚂","🏡","🎨","🌍","🗼","🏰","🌹","🦊","🎲","🐶","🐱","🦅","🏛️","🎠","🍭","🥣","📚","🎸","⚽","🍰","🧁","🍕","🌮","🍜","🍓","🎄","🌾","🎃"];
-const AFFILIATE_TAG      = "puzzleswap-20";
+// ─── Amazon Affiliate ─────────────────────────────────────────────────────────
+// To connect your affiliate account:
+// 1. Go to affiliate-program.amazon.com and sign up
+// 2. Once approved, go to Account Settings → Associate Information
+// 3. Copy your "Associate Store ID" (looks like "yourname-20")
+// 4. Replace "puzzleswap-20" below with your actual ID
+const AFFILIATE_TAG = "puzzleswap-20";
 const PIRATESHIP_REF_URL = "https://www.pirateship.com";
 const BOOST_PRICE = "$1.99";
 const BOOST_MS    = 7 * 864e5;
@@ -434,7 +440,8 @@ function PirateshipBlock({ context = "detail" }) {
 // ZIP-based proximity check — same first 3 digits = likely local (~30 mile radius)
 function isLocalZip(zipA, zipB) {
   if (!zipA || !zipB) return false;
-  return zipA.slice(0,3) === zipB.slice(0,3);
+  // First 4 digits ≈ within ~15 miles
+  return zipA.slice(0,4) === zipB.slice(0,4);
 }
 
 function RequestModal({ puzzle, userOf, currentUser, onClose, onSend }) {
@@ -496,21 +503,24 @@ function RequestModal({ puzzle, userOf, currentUser, onClose, onSend }) {
         <div style={{ marginBottom:18 }}>
           <div style={{ fontSize:11, fontWeight:600, color:"var(--ink-70)", textTransform:"uppercase", letterSpacing:".8px", fontFamily:"var(--sans)", marginBottom:8 }}>
             How would you like to swap?
-            {local && <span style={{ marginLeft:6, fontSize:10, color:"var(--sage)", fontWeight:500, textTransform:"none", letterSpacing:0 }}>📍 You're both nearby</span>}
-            {!local && currentUser?.location && owner?.location && <span style={{ marginLeft:6, fontSize:10, color:"var(--cobalt)", fontWeight:500, textTransform:"none", letterSpacing:0 }}>📦 Different areas — shipping recommended</span>}
+            {local && <span style={{ marginLeft:6, fontSize:10, color:"var(--sage)", fontWeight:500, textTransform:"none", letterSpacing:0 }}>📍 You're within ~15 miles</span>}
+            {!local && currentUser?.location && owner?.location && <span style={{ marginLeft:6, fontSize:10, color:"var(--cobalt)", fontWeight:500, textTransform:"none", letterSpacing:0 }}>📦 Too far for local meetup</span>}
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
             {[
               ["local","📍","Local meetup","Meet up to exchange in person"],
               ["ship","📦","Ship to each other","Each person mails their puzzle"],
-            ].map(([v,icon,label,sub])=>(
-              <button key={v} onClick={()=>setShipPref(v)}
-                style={{ padding:"12px", background:shipPref===v?"var(--cream)":"var(--warm-white)", border:`1.5px solid ${shipPref===v?"var(--terracotta)":"var(--ink-15)"}`, borderRadius:8, cursor:"pointer", textAlign:"left", transition:"all .15s" }}>
-                <div style={{ fontSize:18, marginBottom:4 }}>{icon}</div>
-                <div style={{ fontSize:12, fontWeight:600, color:"var(--ink)", fontFamily:"var(--sans)" }}>{label}</div>
-                <div style={{ fontSize:11, color:"var(--ink-70)", fontFamily:"var(--sans)", marginTop:2 }}>{sub}</div>
-              </button>
-            ))}
+            ].map(([v,icon,label,sub])=>{
+              const disabled = v === "local" && !local;
+              return (
+                <button key={v} onClick={()=>{ if(!disabled) setShipPref(v); }}
+                  style={{ padding:"12px", background:shipPref===v?"var(--cream)":disabled?"var(--parchment)":"var(--warm-white)", border:`1.5px solid ${shipPref===v?"var(--terracotta)":disabled?"var(--ink-08)":"var(--ink-15)"}`, borderRadius:8, cursor:disabled?"not-allowed":"pointer", textAlign:"left", transition:"all .15s", opacity:disabled?0.5:1 }}>
+                  <div style={{ fontSize:18, marginBottom:4 }}>{icon}</div>
+                  <div style={{ fontSize:12, fontWeight:600, color:disabled?"var(--ink-40)":"var(--ink)", fontFamily:"var(--sans)" }}>{label}</div>
+                  <div style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)", marginTop:2 }}>{disabled?"ZIPs too far apart":sub}</div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -645,7 +655,7 @@ function HowItWorks() {
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 // ─── InboxCard ────────────────────────────────────────────────────────────────
-function InboxCard({ r, onRead, onAccept, onDecline, onOpenThread }) {
+function InboxCard({ r, onRead, onAccept, onDecline, onOpenThread, onDelete }) {
 
   const statusColor = {
     accepted:  "var(--sage)",
@@ -732,8 +742,16 @@ function InboxCard({ r, onRead, onAccept, onDecline, onOpenThread }) {
           </button>
         )}
         {r.status === "withdrawn" && (
-          <div style={{ fontSize:12, color:"var(--ink-40)", fontFamily:"var(--sans)", fontStyle:"italic" }}>
-            This request was withdrawn by the sender.
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <div style={{ fontSize:12, color:"var(--ink-40)", fontFamily:"var(--sans)", fontStyle:"italic" }}>
+              This request was withdrawn by the sender.
+            </div>
+            {onDelete && <button onClick={onDelete} style={{ fontSize:12, color:"var(--ink-40)", background:"none", border:"1px solid var(--ink-15)", borderRadius:5, padding:"4px 10px", cursor:"pointer", fontFamily:"var(--sans)" }}>Delete</button>}
+          </div>
+        )}
+        {r.status === "declined" && onDelete && (
+          <div style={{ display:"flex", justifyContent:"flex-end" }}>
+            <button onClick={onDelete} style={{ fontSize:12, color:"var(--ink-40)", background:"none", border:"1px solid var(--ink-15)", borderRadius:5, padding:"4px 10px", cursor:"pointer", fontFamily:"var(--sans)" }}>Delete</button>
           </div>
         )}
       </div>
@@ -950,6 +968,48 @@ function Grid({ items, onSel, onReq, savedList, onToggleSave }) {
   );
 }
 
+// ─── ProfileView ──────────────────────────────────────────────────────────────
+function ProfileView({ currentUser, pe, myListings, setProfEdit, saveProfile, handleLogout, nav }) {
+  return (
+    <div style={{ maxWidth:540 }}>
+      <SectionHead title="My profile" />
+      <div style={{ background:"var(--warm-white)", border:"1px solid var(--ink-15)", borderRadius:14, padding:28, marginBottom:20, boxShadow:"var(--shadow-sm)" }}>
+        <div style={{ display:"flex", gap:16, alignItems:"center", marginBottom:20 }}>
+          <Avatar user={currentUser} size={56} />
+          <div>
+            <div style={{ fontSize:22, fontFamily:"var(--serif)", color:"var(--ink)", fontWeight:700 }}>{currentUser.name}</div>
+            {currentUser.location && <div style={{ fontSize:14, color:"var(--ink-40)", fontFamily:"var(--sans)", marginTop:2 }}>📍 {currentUser.location}</div>}
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:10 }}>
+          <StatBox num={currentUser.trade_count||0} label="Trades" accent />
+          <StatBox num={myListings.length} label="Listings" />
+          <StatBox num={currentUser.member_since||"—"} label="Since" />
+        </div>
+      </div>
+      <div style={{ background:"var(--warm-white)", borderRadius:14, padding:28, border:"1px solid var(--ink-15)", boxShadow:"var(--shadow-sm)" }}>
+        <div style={{ fontSize:18, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:20, fontWeight:700 }}>Edit details</div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <Inp label="Name" value={pe.name||""} onChange={e=>setProfEdit(p=>({...(p||currentUser),name:e.target.value}))} />
+          <Inp label="ZIP Code" placeholder="e.g. 60126" value={pe.location||""} onChange={e=>setProfEdit(p=>({...(p||currentUser),location:e.target.value}))} />
+        </div>
+        <Sel label="Trade preference" value={pe.trade_preference||"Both"} onChange={e=>setProfEdit(p=>({...(p||currentUser),trade_preference:e.target.value}))}>{TRADE_OPTS.map(c=><option key={c}>{c}</option>)}</Sel>
+        <Inp label="Bio (optional)" placeholder="A line about your puzzle style…" value={pe.bio||""} onChange={e=>setProfEdit(p=>({...(p||currentUser),bio:e.target.value}))} />
+        <div style={{ fontSize:12, color:"var(--ink-40)", fontFamily:"var(--sans)", marginBottom:16 }}>
+          💡 Update your ZIP code here anytime — e.g. when travelling.
+        </div>
+        <div style={{ display:"flex", gap:10 }}>
+          <GhostBtn style={{ flex:1 }} onClick={()=>{ setProfEdit(null); nav("browse"); }}>Cancel</GhostBtn>
+          <PrimaryBtn style={{ flex:2 }} onClick={saveProfile}>Save changes</PrimaryBtn>
+        </div>
+      </div>
+      <div style={{ marginTop:16, textAlign:"right" }}>
+        <button onClick={handleLogout} style={{ background:"none", border:"none", cursor:"pointer", fontSize:16, color:"var(--ink-40)", fontFamily:"var(--sans)", textDecoration:"underline", textUnderlineOffset:"3px" }}>Log out</button>
+      </div>
+    </div>
+  );
+}
+
 export default function PuzzleSwap() {
   const [puzzles, setPuzzles]       = useState([]);
   const [currentUser, setCU]        = useState(null);
@@ -981,6 +1041,7 @@ export default function PuzzleSwap() {
   const [aPref, setAPref]           = useState("Both");
   const [aErr, setAErr]             = useState("");
   const [nl, setNl] = useState({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🎲", photo_url:"" });
+  const [nlErr, setNlErr] = useState("");
   const [showSearch, setShowSearch]  = useState(false);
 
   // ─── Load session + puzzles on mount ────────────────────────────────────────
@@ -1181,7 +1242,9 @@ export default function PuzzleSwap() {
 
   // ─── Listings ────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
-    if (!nl.title || !nl.pieces) return;
+    if (!nl.title) { setNlErr("Please add a puzzle title."); return; }
+    if (!nl.pieces) { setNlErr("Please enter the piece count."); return; }
+    setNlErr("");
     const { data, error } = await sb.from("puzzles").insert({
       user_id: currentUser.id,
       title: nl.title,
@@ -1250,7 +1313,10 @@ export default function PuzzleSwap() {
   };
 
   const handleUpdate = async () => {
-    if (!nl.title || !nl.pieces || !editingPuzzle) return;
+    if (!nl.title) { setNlErr("Please add a puzzle title."); return; }
+    if (!nl.pieces) { setNlErr("Please enter the piece count."); return; }
+    if (!editingPuzzle) return;
+    setNlErr("");
     const { error } = await sb.from("puzzles").update({
       title:        nl.title,
       brand:        nl.brand,
@@ -1366,12 +1432,6 @@ export default function PuzzleSwap() {
     await loadRequests(currentUser.id);
   };
 
-  // Always sync profEdit when navigating to profile view
-  useEffect(() => {
-    if (view === "profile" && currentUser) {
-      setProfEdit({...currentUser});
-    }
-  }, [view]); // eslint-disable-line
   const userOf = p => p._owner || null;
 
   const matchPiece = p => {
@@ -1407,13 +1467,6 @@ export default function PuzzleSwap() {
     setView(v);
     if (v === "profile" && currentUser) setProfEdit({...currentUser});
   };
-
-  // Always sync profEdit when entering profile view
-  useEffect(() => {
-    if (view === "profile" && currentUser && !profEdit) {
-      setProfEdit({...currentUser});
-    }
-  }, [view, currentUser]);
 
   const isBrowse = view==="browse" && !sel && !showList && !viewProfile;
   const isSaved  = view==="saved"  && !sel && !viewProfile;
@@ -1577,6 +1630,7 @@ export default function PuzzleSwap() {
                   ["Travel",     "✈️ Travel — landmarks, villages, destinations"],
                   ["Food",       "🍰 Food — cakes, candy, farmers markets, kitchens"],
                   ["Seasonal",   "🍂 Seasonal — Christmas, autumn, spring, summer"],
+                  ["Kids",       "🧸 Kids — floor puzzles, big pieces, characters"],
                   ["Other",      "🧩 Other — doesn't fit anywhere else"],
                 ].map(([v,l])=><option key={v} value={v}>{l}</option>)}
               </Sel>
@@ -1586,6 +1640,7 @@ export default function PuzzleSwap() {
             <TA label="Description" placeholder="All pieces present, completed once. Any details worth knowing…" value={nl.description} onChange={e=>setNl(p=>({...p,description:e.target.value}))} />
             <div style={{ display:"flex", gap:10 }}>
               <GhostBtn style={{ flex:1 }} onClick={()=>{ setShowList(false); setEditing(null); setNl({ title:"", pieces:"", brand:"", condition:"Like New", listingType:"swap", tradePreference:"Both", description:"", category:"Collage", image:"🎲", photo_url:"" }); }}>Cancel</GhostBtn>
+              {nlErr && <div style={{ color:"var(--terracotta)", fontSize:14, fontFamily:"var(--sans)", marginBottom:12, padding:"10px 14px", background:"var(--terracotta-bg)", borderRadius:6, border:"1px solid var(--terracotta-dim)" }}>⚠️ {nlErr}</div>}
               <PrimaryBtn style={{ flex:2 }} onClick={editingPuzzle ? handleUpdate : handleSubmit}>
                 {editingPuzzle ? "Save changes →" : "List for Trade →"}
               </PrimaryBtn>
@@ -1793,6 +1848,7 @@ export default function PuzzleSwap() {
                     ["Travel",     "Travel",     "✈️", "#2A5A5A", "#E8F2F2"],
                     ["Food",       "Food",       "🍰", "#8A3A60", "#F5E8EF"],
                     ["Seasonal",   "Seasonal",   "🍂", "#6A3A18", "#F2EAE0"],
+                    ["Kids",       "Kids",       "🧸", "#5A6A8A", "#EDF0F8"],
                     ["Other",      "Other",      "🧩", "#4A4A4A", "#EDEDED"],
                   ].map(([v, label, icon, activeColor, activeBg]) => {
                     const active = catF === v;
@@ -1845,6 +1901,7 @@ export default function PuzzleSwap() {
                 "Travel":     { icon:"✈️", title:"Travel puzzles",     desc:"Villages, landmarks, destinations from around the world. Cobblestone streets, terracotta rooftops, iconic skylines." },
                 "Seasonal":   { icon:"🍂", title:"Seasonal puzzles",   desc:"Christmas mornings, autumn harvests, spring blooms, summer cottages. Cozy, nostalgic, perfect for gifting." },
                 "Food":       { icon:"🍰", title:"Food puzzles",       desc:"Cakes, candy, farmers markets, kitchen scenes, bakeries. Colorful and satisfying — great for foodies." },
+                "Kids":       { icon:"🧸", title:"Kids puzzles",      desc:"Floor puzzles, big pieces, characters and scenes — for little puzzlers aged 2 and up." },
                 "Other":      { icon:"🧩", title:"Other puzzles",      desc:"Doesn't fit neatly into another category — abstract, architectural, pop culture, and everything else." },
               };
               const m = CAT_META[catF];
@@ -1975,6 +2032,25 @@ export default function PuzzleSwap() {
                 </div>
               )
             }
+            {/* Notifications */}
+            {notifications.length > 0 && (
+              <div style={{ marginTop:28, maxWidth:720 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:"var(--ink-40)", textTransform:"uppercase", letterSpacing:"1px", fontFamily:"var(--sans)", marginBottom:12 }}>Notifications</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  {notifications.map(n => (
+                    <div key={n.id} style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"14px 16px", background:n.read?"var(--warm-white)":"var(--terracotta-bg)", borderRadius:10, border:`1px solid ${n.read?"var(--ink-08)":"var(--terracotta-dim)"}`, boxShadow:"var(--shadow-xs)" }}>
+                      <span style={{ fontSize:20, flexShrink:0 }}>{n.type==="declined"?"✕":"📬"}</span>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:14, fontWeight:600, color:"var(--ink)", fontFamily:"var(--sans)", marginBottom:2 }}>{n.title}</div>
+                        <div style={{ fontSize:14, color:"var(--ink-40)", fontFamily:"var(--sans)", lineHeight:1.5 }}>{n.body}</div>
+                        <div style={{ fontSize:12, color:"var(--ink-40)", fontFamily:"var(--sans)", marginTop:4 }}>{timeAgo(n.created_at)}</div>
+                      </div>
+                      {!n.read && <span style={{ width:8, height:8, borderRadius:"50%", background:"var(--terracotta)", flexShrink:0, marginTop:4 }} />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
 
@@ -2012,44 +2088,17 @@ export default function PuzzleSwap() {
         )}
 
         {/* ── PROFILE ── */}
-        {!showList && !sel && !viewProfile && view === "profile" && currentUser && (() => {
-          const pe = profEdit || currentUser;
-          return (
-          <div style={{ maxWidth:540 }}>
-            <SectionHead title="My profile" />
-            <div style={{ background:"var(--warm-white)", border:"1px solid var(--ink-15)", borderRadius:14, padding:28, marginBottom:20 }}>
-              <div style={{ display:"flex", gap:16, alignItems:"center", marginBottom:20 }}>
-                <Avatar user={currentUser} size={56} />
-                <div>
-                  <div style={{ fontSize:22, fontFamily:"var(--serif)", color:"var(--ink)" }}>{currentUser.name}</div>
-                  {currentUser.location && <div style={{ fontSize:13, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>📍 {currentUser.location}</div>}
-                </div>
-              </div>
-              <div style={{ display:"flex", gap:10 }}>
-                <StatBox num={currentUser.trade_count} label="Trades" accent />
-                <StatBox num={myListings.length} label="Listings" />
-                <StatBox num={currentUser.member_since} label="Since" />
-              </div>
-            </div>
-            <div style={{ background:"var(--warm-white)", borderRadius:14, padding:28, border:"1px solid var(--ink-15)" }}>
-              <div style={{ fontSize:16, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:20 }}>Edit details</div>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                <Inp label="Name" value={pe.name||""} onChange={e=>setProfEdit(p=>({...(p||currentUser),name:e.target.value}))} />
-                <Inp label="ZIP Code" placeholder="e.g. 60126" value={pe.location||""} onChange={e=>setProfEdit(p=>({...(p||currentUser),location:e.target.value}))} />
-              </div>
-              <Sel label="Trade preference" value={pe.trade_preference||"Both"} onChange={e=>setProfEdit(p=>({...(p||currentUser),trade_preference:e.target.value}))}>{TRADE_OPTS.map(c=><option key={c}>{c}</option>)}</Sel>
-              <Inp label="Bio (optional)" placeholder="A line about your puzzle style…" value={pe.bio||""} onChange={e=>setProfEdit(p=>({...(p||currentUser),bio:e.target.value}))} />
-              <div style={{ display:"flex", gap:10 }}>
-                <GhostBtn style={{ flex:1 }} onClick={()=>{ setProfEdit(null); nav("browse"); }}>Cancel</GhostBtn>
-                <PrimaryBtn style={{ flex:2 }} onClick={saveProfile}>Save changes</PrimaryBtn>
-              </div>
-            </div>
-            <div style={{ marginTop:14, textAlign:"right" }}>
-              <button onClick={handleLogout} style={{ background:"none", border:"none", cursor:"pointer", fontSize:16, color:"var(--ink-40)", fontFamily:"var(--sans)", textDecoration:"underline", textUnderlineOffset:"3px" }}>Log out</button>
-            </div>
-          </div>
-          );
-        })()}
+        {!showList && !sel && !viewProfile && view === "profile" && currentUser && (
+          <ProfileView
+            currentUser={currentUser}
+            pe={profEdit || currentUser}
+            myListings={myListings}
+            setProfEdit={setProfEdit}
+            saveProfile={saveProfile}
+            handleLogout={handleLogout}
+            nav={nav}
+          />
+        )}
       </main>
 
       {/* ── AUTH MODAL ── */}
