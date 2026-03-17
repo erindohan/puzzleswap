@@ -844,37 +844,23 @@ function MessageThread({ requestId, currentUserId, messages, onSend, onClose, re
 }
 
 // ─── AvatarMenu — dropdown with Profile + Log out ────────────────────────────
-function AvatarMenu({ user, onProfile, onLogout }) {
+function AvatarMenu({ user, onProfile, onLogout, setProfEdit }) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{ position:"relative" }}>
-      {/* Avatar button */}
-      <div
-        title={user.name}
-        onClick={()=>setOpen(o=>!o)}
-        style={{ cursor:"pointer", userSelect:"none" }}
-      >
+      <div title={user.name} onClick={()=>setOpen(o=>!o)} style={{ cursor:"pointer", userSelect:"none" }}>
         <Avatar user={user} size={36} />
       </div>
-
-      {/* Dropdown */}
       {open && (
         <>
-          {/* Backdrop — click outside to close */}
-          <div
-            style={{ position:"fixed", inset:0, zIndex:998 }}
-            onClick={()=>setOpen(false)}
-          />
+          <div style={{ position:"fixed", inset:0, zIndex:998 }} onClick={()=>setOpen(false)} />
           <div style={{
             position:"absolute", top:"calc(100% + 10px)", right:0,
             background:"var(--warm-white)", borderRadius:10,
-            border:"1px solid var(--ink-08)",
-            boxShadow:"var(--shadow-lg)",
-            minWidth:180, zIndex:999,
-            overflow:"hidden",
+            border:"1px solid var(--ink-08)", boxShadow:"var(--shadow-lg)",
+            minWidth:190, zIndex:999, overflow:"hidden",
             animation:"slideDown 0.15s ease",
           }}>
-            {/* User info */}
             <div style={{ padding:"14px 16px", borderBottom:"1px solid var(--ink-08)", display:"flex", alignItems:"center", gap:10 }}>
               <Avatar user={user} size={32} />
               <div>
@@ -882,24 +868,22 @@ function AvatarMenu({ user, onProfile, onLogout }) {
                 <div style={{ fontSize:12, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>{user.email}</div>
               </div>
             </div>
-            {/* Menu items */}
             {[
-              ["👤", "My Profile",    ()=>{ setOpen(false); onProfile(); }],
-              ["📤", "Log out",       ()=>{ setOpen(false); onLogout(); }],
+              ["👤", "My Profile", () => { setProfEdit({...user}); setOpen(false); onProfile(); }],
+              ["📤", "Log out",    () => { setOpen(false); onLogout(); }],
             ].map(([icon, label, action]) => (
               <button key={label} onClick={action} style={{
                 width:"100%", display:"flex", alignItems:"center", gap:10,
-                padding:"12px 16px", background:"none", border:"none",
+                padding:"13px 16px", background:"none", border:"none",
                 cursor:"pointer", fontFamily:"var(--sans)", fontSize:15,
                 color: label === "Log out" ? "var(--terracotta)" : "var(--ink)",
                 fontWeight: label === "Log out" ? 600 : 400,
-                textAlign:"left", transition:"background .12s",
+                textAlign:"left",
               }}
                 onMouseEnter={e=>e.currentTarget.style.background="var(--cream)"}
                 onMouseLeave={e=>e.currentTarget.style.background="none"}
               >
-                <span style={{ fontSize:16 }}>{icon}</span>
-                {label}
+                <span style={{ fontSize:16 }}>{icon}</span>{label}
               </button>
             ))}
           </div>
@@ -1472,9 +1456,10 @@ export default function PuzzleSwap() {
   };
 
   const nav = v => {
+    // Set profEdit FIRST before view changes, so profile never renders with pe=null
+    if (v === "profile" && currentUser) setProfEdit({...currentUser});
     goBack();
     setView(v);
-    if (v === "profile" && currentUser) setProfEdit({...currentUser});
   };
 
   const isBrowse = view==="browse" && !sel && !showList && !viewProfile;
@@ -1532,7 +1517,7 @@ export default function PuzzleSwap() {
             {currentUser ? (
               <>
                 <PrimaryBtn sm onClick={()=>{ setSel(null); setViewProf(null); setView("browse"); setShowList(true); }}>+ List</PrimaryBtn>
-                <AvatarMenu user={currentUser} onProfile={()=>nav("profile")} onLogout={handleLogout} />
+                <AvatarMenu user={currentUser} onProfile={()=>nav("profile")} onLogout={handleLogout} setProfEdit={setProfEdit} />
               </>
             ) : (
               <>
