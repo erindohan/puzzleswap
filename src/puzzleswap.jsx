@@ -1005,6 +1005,33 @@ function ProfileView({ currentUser, pe, myListings, setProfEdit, saveProfile, ha
   );
 }
 
+// ─── CategoryBanner ───────────────────────────────────────────────────────────
+const CAT_META = {
+  "Collage":    { icon:"🎲", title:"Collage puzzles",    desc:"Dozens of images packed into one — vintage games, candy wrappers, album covers, movie posters, cereal boxes. Every inch has something to find." },
+  "Landscape":  { icon:"🌄", title:"Landscape puzzles",  desc:"Mountains, valleys, forests, open countryside. Big skies, rolling terrain, natural light. The most relaxing category to build." },
+  "Nightscape": { icon:"🌃", title:"Nightscape puzzles", desc:"City lights, starry skies, moonlit water. Dark backgrounds make these tricky but the finished image is always stunning." },
+  "Animals":    { icon:"🦁", title:"Animals puzzles",    desc:"Wildlife, pets, birds, ocean life. From golden savanna photography to cozy cottage cats — something for every animal lover." },
+  "Fine Art":   { icon:"🖼️", title:"Fine Art puzzles",   desc:"Paintings, illustration, masterpieces — Van Gogh, Monet, Klimt and more. Subtle color gradients make these genuinely challenging." },
+  "Travel":     { icon:"✈️", title:"Travel puzzles",     desc:"Villages, landmarks, destinations from around the world. Cobblestone streets, terracotta rooftops, iconic skylines." },
+  "Seasonal":   { icon:"🍂", title:"Seasonal puzzles",   desc:"Christmas mornings, autumn harvests, spring blooms, summer cottages. Cozy, nostalgic, perfect for gifting." },
+  "Food":       { icon:"🍰", title:"Food puzzles",       desc:"Cakes, candy, farmers markets, kitchen scenes, bakeries. Colorful and satisfying — great for foodies." },
+  "Kids":       { icon:"🧸", title:"Kids puzzles",       desc:"Floor puzzles, big pieces, characters and scenes — for little puzzlers aged 2 and up." },
+  "Other":      { icon:"🧩", title:"Other puzzles",      desc:"Doesn't fit neatly into another category — abstract, architectural, pop culture, and everything else." },
+};
+function CategoryBanner({ catF }) {
+  const m = CAT_META[catF];
+  if (!m) return null;
+  return (
+    <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"14px 18px", background:"var(--cream)", border:"1px solid var(--tan)", borderRadius:8, marginBottom:20, animation:"fadeUp 0.3s ease both" }}>
+      <span style={{ fontSize:22, lineHeight:1, flexShrink:0 }}>{m.icon}</span>
+      <div>
+        <div style={{ fontSize:13, fontWeight:600, color:"var(--ink)", fontFamily:"var(--sans)", marginBottom:3 }}>{m.title}</div>
+        <div style={{ fontSize:12, color:"var(--ink-70)", fontFamily:"var(--sans)", lineHeight:1.6 }}>{m.desc}</div>
+      </div>
+    </div>
+  );
+}
+
 export default function PuzzleSwap() {
   const [puzzles, setPuzzles]       = useState([]);
   const [currentUser, setCU]        = useState(null);
@@ -1012,6 +1039,7 @@ export default function PuzzleSwap() {
   const [view, setView]             = useState("browse");
   const [sel, setSel]               = useState(null);
   const [viewProfile, setViewProf]  = useState(null);
+  const [profEdit, setProfEdit]     = useState(null);
   const [showList, setShowList]     = useState(false);
   const [showAuth, setShowAuth]     = useState(false);
   const [authTab, setAuthTab]       = useState("login");
@@ -1462,10 +1490,14 @@ export default function PuzzleSwap() {
     setView(v);
   };
 
-  const isBrowse = view==="browse" && !sel && !showList && !viewProfile;
-  const isSaved  = view==="saved"  && !sel && !viewProfile;
-  const isMyList = view==="mylistings" && !showList;
-  const isInbox  = view==="inbox";
+  const isBrowse    = view==="browse" && !sel && !showList && !viewProfile;
+  const isSaved     = view==="saved"  && !sel && !viewProfile;
+  const isMyList    = view==="mylistings" && !showList;
+  const isInbox     = view==="inbox";
+  // Derived from sel — avoids IIFEs in JSX
+  const selOwner    = sel ? userOf(sel) : null;
+  const selLt       = sel ? (LISTING_TYPES[sel.listing_type] || LISTING_TYPES.offer) : null;
+  const selIsSaved  = sel ? savedList.includes(sel.id) : false;
 
 
   if (loading) return (
@@ -1643,11 +1675,7 @@ export default function PuzzleSwap() {
         )}
 
         {/* ── PUZZLE DETAIL ── */}
-        {!showList && sel && (() => {
-          const owner   = userOf(sel);
-          const lt      = LISTING_TYPES[sel.listing_type] || LISTING_TYPES.offer;
-          const isSave  = savedList.includes(sel.id);
-          return (
+        {!showList && sel && selLt && (
             <div style={{ maxWidth:680 }}>
               <BackBtn onClick={()=>nav("browse")} />
               <div style={{ background:"var(--warm-white)", borderRadius:14, border:"1px solid var(--ink-15)", overflow:"hidden", boxShadow:"var(--shadow-lg)" }}>
@@ -1655,8 +1683,8 @@ export default function PuzzleSwap() {
                   <PuzzleBox artIdx={sel.art||0} emoji={sel.image||"🧩"} size="lg" category={sel.category} photoUrl={sel.photo_url||""} />
                   <PieceCount pieces={sel.pieces} />
                   <button onClick={()=>handleToggleSave(sel.id)}
-                    style={{ position:"absolute", top:14, left:14, background:"rgba(28,24,20,0.6)", backdropFilter:"blur(10px)", border:`1px solid ${isSave?"var(--amber)":"rgba(255,255,255,0.15)"}`, borderRadius:6, padding:"7px 13px", cursor:"pointer", fontSize:13, color:isSave?"var(--amber)":"rgba(255,255,255,0.8)", display:"flex", alignItems:"center", gap:5, fontFamily:"var(--sans)" }}>
-                    {isSave?"♥":"♡"} {sel.saves+(isSave?1:0)}
+                    style={{ position:"absolute", top:14, left:14, background:"rgba(28,24,20,0.6)", backdropFilter:"blur(10px)", border:`1px solid ${selIsSaved?"var(--amber)":"rgba(255,255,255,0.15)"}`, borderRadius:6, padding:"7px 13px", cursor:"pointer", fontSize:13, color:selIsSaved?"var(--amber)":"rgba(255,255,255,0.8)", display:"flex", alignItems:"center", gap:5, fontFamily:"var(--sans)" }}>
+                    {selIsSaved?"♥":"♡"} {sel.saves+(selIsSaved?1:0)}
                   </button>
                 </div>
 
@@ -1677,9 +1705,9 @@ export default function PuzzleSwap() {
                   {sel.description && <p style={{ fontSize:15, color:"var(--ink-70)", fontFamily:"var(--sans)", lineHeight:1.8, marginBottom:24 }}>{sel.description}</p>}
 
                   {/* Listing type explainer */}
-                  <div style={{ background:lt.bg, border:`1px solid ${lt.color}33`, borderRadius:8, padding:"14px 18px", marginBottom:20 }}>
+                  <div style={{ background:selLt.bg, border:`1px solid ${selLt.color}33`, borderRadius:8, padding:"14px 18px", marginBottom:20 }}>
                     <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
-                      <span style={{ fontSize:20, color:lt.color, lineHeight:1.2, flexShrink:0 }}>{lt.icon}</span>
+                      <span style={{ fontSize:20, color:selLt.color, lineHeight:1.2, flexShrink:0 }}>{selLt.icon}</span>
                       <div>
                         <div style={{ fontSize:13, fontWeight:600, color:"var(--ink)", fontFamily:"var(--sans)", marginBottom:3 }}>
                           {sel.listing_type==="swap"   && "Even swap — puzzle for puzzle"}
@@ -1712,14 +1740,13 @@ export default function PuzzleSwap() {
                   </a>
 
                   {/* Seller */}
-                  {owner && (
+                  {selOwner && (
                     <div style={{ display:"flex", alignItems:"center", gap:12, padding:"14px 16px", background:"var(--cream)", borderRadius:8, marginBottom:20, cursor:"pointer", border:"1px solid var(--tan)", transition:"border-color .15s" }}
-                      onMouseEnter={e=>e.currentTarget.style.borderColor="var(--tan)"} onMouseLeave={e=>e.currentTarget.style.borderColor="var(--tan)"}
-                      onClick={()=>{ setViewProf(owner); setSel(null); }}>
-                      <Avatar user={owner} size={40} />
+                      onClick={()=>{ setViewProf(selOwner); setSel(null); }}>
+                      <Avatar user={selOwner} size={40} />
                       <div style={{ flex:1 }}>
-                        <div style={{ fontSize:14, fontFamily:"var(--serif)", color:"var(--ink)" }}>{owner.name}</div>
-                        <div style={{ fontSize:12, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>📍 {owner.location} · <span style={{ color:"var(--terracotta)" }}>{owner.trade_count} trades</span></div>
+                        <div style={{ fontSize:14, fontFamily:"var(--serif)", color:"var(--ink)" }}>{selOwner.name}</div>
+                        <div style={{ fontSize:12, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>📍 {selOwner.location} · <span style={{ color:"var(--terracotta)" }}>{selOwner.trade_count} trades</span></div>
                       </div>
                       <span style={{ color:"var(--ink-40)", fontSize:16 }}>›</span>
                     </div>
@@ -1731,8 +1758,7 @@ export default function PuzzleSwap() {
                 </div>
               </div>
             </div>
-          );
-        })()}
+        )}
 
         {/* ── OTHER PROFILE ── */}
         {!showList && !sel && viewProfile && (
@@ -1885,31 +1911,7 @@ export default function PuzzleSwap() {
             </div>
 
             {/* Category description banner */}
-            {catF !== "All" && (() => {
-              const CAT_META = {
-                "Collage":    { icon:"🎲", title:"Collage puzzles",    desc:"Dozens of images packed into one — vintage games, candy wrappers, album covers, movie posters, cereal boxes. Every inch has something to find." },
-                "Landscape":  { icon:"🌄", title:"Landscape puzzles",  desc:"Mountains, valleys, forests, open countryside. Big skies, rolling terrain, natural light. The most relaxing category to build." },
-                "Nightscape": { icon:"🌃", title:"Nightscape puzzles", desc:"City lights, starry skies, moonlit water. Dark backgrounds make these tricky but the finished image is always stunning." },
-                "Animals":    { icon:"🦁", title:"Animals puzzles",    desc:"Wildlife, pets, birds, ocean life. From golden savanna photography to cozy cottage cats — something for every animal lover." },
-                "Fine Art":   { icon:"🖼️", title:"Fine Art puzzles",   desc:"Paintings, illustration, masterpieces — Van Gogh, Monet, Klimt and more. Subtle color gradients make these genuinely challenging." },
-                "Travel":     { icon:"✈️", title:"Travel puzzles",     desc:"Villages, landmarks, destinations from around the world. Cobblestone streets, terracotta rooftops, iconic skylines." },
-                "Seasonal":   { icon:"🍂", title:"Seasonal puzzles",   desc:"Christmas mornings, autumn harvests, spring blooms, summer cottages. Cozy, nostalgic, perfect for gifting." },
-                "Food":       { icon:"🍰", title:"Food puzzles",       desc:"Cakes, candy, farmers markets, kitchen scenes, bakeries. Colorful and satisfying — great for foodies." },
-                "Kids":       { icon:"🧸", title:"Kids puzzles",      desc:"Floor puzzles, big pieces, characters and scenes — for little puzzlers aged 2 and up." },
-                "Other":      { icon:"🧩", title:"Other puzzles",      desc:"Doesn't fit neatly into another category — abstract, architectural, pop culture, and everything else." },
-              };
-              const m = CAT_META[catF];
-              if (!m) return null;
-              return (
-                <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"14px 18px", background:"var(--cream)", border:"1px solid var(--tan)", borderRadius:8, marginBottom:20, animation:"fadeUp 0.3s ease both" }}>
-                  <span style={{ fontSize:22, lineHeight:1, flexShrink:0 }}>{m.icon}</span>
-                  <div>
-                    <div style={{ fontSize:13, fontWeight:600, color:"var(--ink)", fontFamily:"var(--sans)", marginBottom:3 }}>{m.title}</div>
-                    <div style={{ fontSize:12, color:"var(--ink-70)", fontFamily:"var(--sans)", lineHeight:1.6 }}>{m.desc}</div>
-                  </div>
-                </div>
-              );
-            })()}
+            <CategoryBanner catF={catF} />
 
             {/* Results count */}
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:22 }}>
@@ -2165,43 +2167,46 @@ export default function PuzzleSwap() {
             </div>
             {/* Autocomplete results */}
             <div style={{ background:"var(--warm-white)", borderRadius:"0 0 10px 10px", border:"1px solid var(--ink-08)", borderTop:"1px solid var(--ink-15)", maxHeight:"60vh", overflowY:"auto" }}>
-              {searchQ.trim() === "" ? (
+              {searchQ.trim() === "" && (
                 <div style={{ padding:"20px 20px", color:"var(--ink-40)", fontFamily:"var(--sans)", fontSize:15 }}>
                   Start typing to search puzzles…
                 </div>
-              ) : (() => {
+              )}
+              {searchQ.trim() !== "" && (() => {
                 const q = searchQ.toLowerCase();
-                const results = puzzles.filter(p =>
+                return puzzles.filter(p =>
                   p.title.toLowerCase().includes(q) ||
                   (p.brand||"").toLowerCase().includes(q) ||
                   (p.category||"").toLowerCase().includes(q)
                 ).slice(0, 8);
-                if (results.length === 0) return (
-                  <div style={{ padding:"20px", color:"var(--ink-40)", fontFamily:"var(--sans)", fontSize:15 }}>No puzzles found for "{searchQ}"</div>
-                );
-                return results.map(p => (
-                  <button key={p.id} onClick={()=>{
-                    setShowSearch(false);
-                    setSearchQ("");
-                    setView("browse");
-                    setShowList(false);
-                    setViewProf(null);
-                    setSel(p); // set AFTER goBack-like resets so it isn't wiped
-                  }}
-                    style={{ width:"100%", display:"flex", alignItems:"center", gap:14, padding:"14px 20px", background:"none", border:"none", borderBottom:"1px solid var(--ink-08)", cursor:"pointer", textAlign:"left", transition:"background .12s" }}
-                    onMouseEnter={e=>e.currentTarget.style.background="var(--cream)"}
-                    onMouseLeave={e=>e.currentTarget.style.background="none"}>
-                    <div style={{ width:44, height:44, background:PIECE_PALETTE[p.art%PIECE_PALETTE.length].bg, borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0, overflow:"hidden" }}>
-                      {p.photo_url ? <img src={p.photo_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} /> : p.image || "🧩"}
-                    </div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:16, fontFamily:"var(--serif)", color:"var(--ink)", fontWeight:700, marginBottom:2, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{p.title}</div>
-                      <div style={{ fontSize:13, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>{p.brand} · {p.pieces.toLocaleString()} pcs · {p.category}</div>
-                    </div>
-                    <LTBadge type={p.listing_type} />
-                  </button>
-                ));
-              })()}
+              })().length === 0 && searchQ.trim() !== "" && (
+                <div style={{ padding:"20px", color:"var(--ink-40)", fontFamily:"var(--sans)", fontSize:15 }}>No puzzles found for "{searchQ}"</div>
+              )}
+              {searchQ.trim() !== "" && puzzles.filter(p => {
+                const q = searchQ.toLowerCase();
+                return p.title.toLowerCase().includes(q) || (p.brand||"").toLowerCase().includes(q) || (p.category||"").toLowerCase().includes(q);
+              }).slice(0,8).map(p => (
+                <button key={p.id} onClick={()=>{
+                  setShowSearch(false);
+                  setSearchQ("");
+                  setView("browse");
+                  setShowList(false);
+                  setViewProf(null);
+                  setSel(p);
+                }}
+                  style={{ width:"100%", display:"flex", alignItems:"center", gap:14, padding:"14px 20px", background:"none", border:"none", borderBottom:"1px solid var(--ink-08)", cursor:"pointer", textAlign:"left", transition:"background .12s" }}
+                  onMouseEnter={e=>e.currentTarget.style.background="var(--cream)"}
+                  onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                  <div style={{ width:44, height:44, background:PIECE_PALETTE[p.art%PIECE_PALETTE.length].bg, borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0, overflow:"hidden" }}>
+                    {p.photo_url ? <img src={p.photo_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} /> : p.image || "🧩"}
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:16, fontFamily:"var(--serif)", color:"var(--ink)", fontWeight:700, marginBottom:2, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{p.title}</div>
+                    <div style={{ fontSize:13, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>{p.brand} · {p.pieces.toLocaleString()} pcs · {p.category}</div>
+                  </div>
+                  <LTBadge type={p.listing_type} />
+                </button>
+              ))}
               {searchQ.trim() !== "" && (
                 <button onClick={()=>{
                   setShowSearch(false);
