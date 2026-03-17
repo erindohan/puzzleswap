@@ -891,6 +891,65 @@ function Modal({ onClose, children, wide }) {
   );
 }
 
+// ─── FPill ────────────────────────────────────────────────────────────────────
+function FPill({ label, active, onClick }) {
+  return (
+    <button className="filter-pill" onClick={onClick}
+      style={{ padding:"8px 16px", background:active?"var(--terracotta)":"transparent", color:active?"white":"var(--ink-40)", border:`1px solid ${active?"var(--terracotta)":"var(--ink-15)"}`, borderRadius:99, fontSize:14, fontFamily:"var(--sans)", fontWeight:active?700:400, cursor:"pointer", whiteSpace:"nowrap", transition:"all .15s" }}>
+      {label}
+    </button>
+  );
+}
+
+// ─── BackBtn ──────────────────────────────────────────────────────────────────
+function BackBtn({ onClick }) {
+  return (
+    <button onClick={onClick} style={{ display:"inline-flex", alignItems:"center", gap:6, color:"var(--ink-40)", background:"none", border:"none", cursor:"pointer", fontSize:15, fontFamily:"var(--sans)", marginBottom:28, padding:0, transition:"color .15s" }}
+      onMouseEnter={e=>e.currentTarget.style.color="var(--ink)"} onMouseLeave={e=>e.currentTarget.style.color="var(--ink-40)"}>
+      ← Back
+    </button>
+  );
+}
+
+// ─── SectionHead ──────────────────────────────────────────────────────────────
+function SectionHead({ title, sub, action }) {
+  return (
+    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:32 }}>
+      <div>
+        <h2 style={{ fontSize:32, fontFamily:"var(--serif)", color:"var(--ink)", fontWeight:700, marginBottom:4, lineHeight:1.2 }}>{title}</h2>
+        {sub && <p style={{ fontSize:14, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>{sub}</p>}
+      </div>
+      {action}
+    </div>
+  );
+}
+
+// ─── StatBox ──────────────────────────────────────────────────────────────────
+function StatBox({ num, label, accent }) {
+  return (
+    <div style={{ background:"var(--cream)", borderRadius:8, padding:"14px 16px", textAlign:"center", flex:1, border:"1px solid var(--tan)" }}>
+      <div style={{ fontSize:20, fontFamily:"var(--serif)", color:accent?"var(--terracotta)":"var(--ink)" }}>{num}</div>
+      <div style={{ fontSize:11, color:"var(--ink-40)", fontFamily:"var(--sans)", textTransform:"uppercase", letterSpacing:"1px", marginTop:3 }}>{label}</div>
+    </div>
+  );
+}
+
+// ─── Grid — needs handlers passed as props ────────────────────────────────────
+function Grid({ items, onSel, onReq, savedList, onToggleSave }) {
+  return (
+    <div className="card-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))", gap:22 }}>
+      {items.map((p,i) => (
+        <PuzzleCard key={p.id} puzzle={p} animClass={`f${Math.min(i+1,6)}`}
+          onOpen={onSel}
+          onRequest={onReq}
+          saved={savedList.includes(p.id)}
+          onToggleSave={onToggleSave}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function PuzzleSwap() {
   const [puzzles, setPuzzles]       = useState([]);
   const [currentUser, setCU]        = useState(null);
@@ -909,6 +968,8 @@ export default function PuzzleSwap() {
   const [reqModal, setReqModal]     = useState(null);
   const [requests, setRequests]     = useState([]);
   const [sentRequests, setSent]     = useState([]);
+  const [notifications, setNotifs]  = useState([]);
+  const [unreadNotifs, setUnreadN]  = useState(0);
   const [unreadCount, setUnread]    = useState(0);
   const [openThread, setOpenThread] = useState(null); // request id of open thread
   const [threads, setThreads]       = useState({});   // { requestId: [messages] }
@@ -957,6 +1018,7 @@ export default function PuzzleSwap() {
       loadRequests(userId);
       loadSentRequests(userId);
       loadAllThreads(userId);
+      loadNotifications(userId);
     } else {
       const { data: authUser } = await sb.auth.getUser();
       const email = authUser?.user?.email || "";
@@ -977,6 +1039,14 @@ export default function PuzzleSwap() {
   const loadSentRequests = async (userId) => {
     const { data } = await sb.from("requests").select("*").eq("sender_id", userId).order("created_at", { ascending: false });
     if (data) setSent(data);
+  };
+
+  const loadNotifications = async (userId) => {
+    const { data } = await sb.from("notifications").select("*").eq("user_id", userId).order("created_at", { ascending: false });
+    if (data) {
+      setNotifs(data);
+      setUnreadN(data.filter(n => !n.read).length);
+    }
   };
 
   const loadThread = async (requestId) => {
@@ -1249,7 +1319,12 @@ export default function PuzzleSwap() {
     await loadSentRequests(currentUser.id);
   };
 
-  const handleCancelRequest = async (requestId) => {
+  const handleDeleteInboxItem = async (requestId) => {
+    await sb.from("requests").delete().eq("id", requestId);
+    setRequests(prev => prev.filter(r => r.id !== requestId));
+  };
+
+  const [offerModal, setOfferModal] = useState(null); // { user } — for unlisted trade offers
     await sb.from("requests").update({ status:"withdrawn" }).eq("id", requestId);
     setSent(prev => prev.map(r => r.id === requestId ? {...r, status:"withdrawn"} : r));
   };
@@ -1274,16 +1349,27 @@ export default function PuzzleSwap() {
   };
 
   const handleDecline = async (requestId) => {
+    const req = requests.find(r => r.id === requestId);
     await sb.from("requests").update({ status:"declined", read:true }).eq("id", requestId);
+    // Notify the sender
+    if (req) {
+      await sb.from("notifications").insert({
+        user_id: req.sender_id,
+        type:    "declined",
+        title:   "Request declined",
+        body:    `Your request for "${req.puzzle_title}" was not a match this time. Keep browsing — there are more puzzles out there!`,
+        read:    false,
+      });
+    }
     await loadRequests(currentUser.id);
   };
 
-  // Initialize profEdit whenever profile view becomes active
+  // Always sync profEdit when navigating to profile view
   useEffect(() => {
-    if (view === "profile" && currentUser && !profEdit) {
+    if (view === "profile" && currentUser) {
       setProfEdit({...currentUser});
     }
-  }, [view, currentUser]);
+  }, [view]); // eslint-disable-line
   const userOf = p => p._owner || null;
 
   const matchPiece = p => {
@@ -1307,6 +1393,7 @@ export default function PuzzleSwap() {
   }));
 
   const myListings = puzzles.filter(p => currentUser && p.user_id === currentUser.id);
+
   const goBack = () => {
     setSel(null);
     setViewProf(null);
@@ -1317,78 +1404,21 @@ export default function PuzzleSwap() {
     goBack();
     setView(v);
     if (v === "profile" && currentUser) setProfEdit({...currentUser});
-    // Push to browser history so back button works
-    window.history.pushState({ view: v }, "", window.location.pathname);
   };
 
-  // Listen for browser back button
+  // Always sync profEdit when entering profile view
   useEffect(() => {
-    const handlePop = (e) => {
-      const v = e.state?.view || "browse";
-      setView(v);
-      setSel(null);
-      setViewProf(null);
-      setShowList(false);
-      if (v === "profile" && currentUser) setProfEdit({...currentUser});
-    };
-    // Set initial history entry so back has somewhere to go
-    window.history.replaceState({ view: "browse" }, "", window.location.pathname);
-    window.addEventListener("popstate", handlePop);
-    return () => window.removeEventListener("popstate", handlePop);
-  }, [currentUser]);
+    if (view === "profile" && currentUser && !profEdit) {
+      setProfEdit({...currentUser});
+    }
+  }, [view, currentUser]);
 
   const isBrowse = view==="browse" && !sel && !showList && !viewProfile;
   const isSaved  = view==="saved"  && !sel && !viewProfile;
   const isMyList = view==="mylistings" && !showList;
   const isInbox  = view==="inbox";
 
-  // Filter pill
-  const FPill = ({label, active, onClick}) => (
-    <button className="filter-pill" onClick={onClick}
-      style={{ padding:"8px 16px", background:active?"var(--terracotta)":"transparent", color:active?"white":"var(--ink-40)", border:`1px solid ${active?"var(--terracotta)":"var(--ink-15)"}`, borderRadius:99, fontSize:14, fontFamily:"var(--sans)", fontWeight:active?700:400, cursor:"pointer", whiteSpace:"nowrap", transition:"all .15s" }}>
-      {label}
-    </button>
-  );
 
-  const BackBtn = ({ onClick }) => (
-    <button onClick={()=>{ onClick(); window.history.back(); }} style={{ display:"inline-flex", alignItems:"center", gap:6, color:"var(--ink-40)", background:"none", border:"none", cursor:"pointer", fontSize:15, fontFamily:"var(--sans)", marginBottom:28, padding:0 }}
-      onMouseEnter={e=>e.currentTarget.style.color="var(--ink)"} onMouseLeave={e=>e.currentTarget.style.color="var(--ink-40)"}>
-      ← Back
-    </button>
-  );
-
-  const SectionHead = ({ title, sub, action }) => (
-    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:32 }}>
-      <div>
-        <h2 style={{ fontSize:32, fontFamily:"var(--serif)", color:"var(--ink)", fontWeight:700, marginBottom:4, lineHeight:1.2 }}>{title}</h2>
-        {sub && <p style={{ fontSize:14, color:"var(--ink-70)", fontFamily:"var(--sans)" }}>{sub}</p>}
-      </div>
-      {action}
-    </div>
-  );
-
-  const Grid = ({ items }) => (
-    <div className="card-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))", gap:22 }}>
-      {items.map((p,i) => (
-        <PuzzleCard key={p.id} puzzle={p} animClass={`f${Math.min(i+1,6)}`}
-          onOpen={(puzzle) => {
-            setSel(puzzle);
-            window.history.pushState({ view: "browse", sel: puzzle.id }, "", window.location.pathname);
-          }}
-          onRequest={handleReq}
-          saved={savedList.includes(p.id)}
-          onToggleSave={handleToggleSave}
-        />
-      ))}
-    </div>
-  );
-
-  const StatBox = ({ num, label, accent }) => (
-    <div style={{ background:"var(--cream)", borderRadius:8, padding:"14px 16px", textAlign:"center", flex:1, border:"1px solid var(--tan)" }}>
-      <div style={{ fontSize:20, fontFamily:"var(--serif)", color:accent?"var(--terracotta)":"var(--ink)" }}>{num}</div>
-      <div style={{ fontSize:10, color:"var(--ink-40)", fontFamily:"var(--sans)", textTransform:"uppercase", letterSpacing:"1px", marginTop:3 }}>{label}</div>
-    </div>
-  );
   if (loading) return (
     <div style={{ minHeight:"100vh", background:"var(--warm-white)", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
       <div style={{ fontSize:40 }}>🧩</div>
@@ -1568,7 +1598,7 @@ export default function PuzzleSwap() {
           const isSave  = savedList.includes(sel.id);
           return (
             <div style={{ maxWidth:680 }}>
-              <BackBtn onClick={goBack} />
+              <BackBtn onClick={()=>nav("browse")} />
               <div style={{ background:"var(--warm-white)", borderRadius:14, border:"1px solid var(--ink-15)", overflow:"hidden", boxShadow:"var(--shadow-lg)" }}>
                 <div style={{ position:"relative" }}>
                   <PuzzleBox artIdx={sel.art||0} emoji={sel.image||"🧩"} size="lg" category={sel.category} photoUrl={sel.photo_url||""} />
@@ -1656,7 +1686,7 @@ export default function PuzzleSwap() {
         {/* ── OTHER PROFILE ── */}
         {!showList && !sel && viewProfile && (
           <div>
-            <BackBtn onClick={goBack} />
+            <BackBtn onClick={()=>nav("browse")} />
             <div style={{ background:"var(--warm-white)", border:"1px solid var(--ink-15)", borderRadius:14, padding:30, marginBottom:28 }}>
               <div style={{ display:"flex", gap:18, alignItems:"flex-start", marginBottom:22 }}>
                 <Avatar user={viewProfile} size={64} />
@@ -1673,7 +1703,7 @@ export default function PuzzleSwap() {
               </div>
             </div>
             <SectionHead title="Their puzzles" />
-            <Grid items={puzzles.filter(p=>p.user_id===viewProfile.id)} />
+            <Grid onSel={setSel} onReq={handleReq} savedList={savedList} onToggleSave={handleToggleSave} items={puzzles.filter(p=>p.user_id===viewProfile.id)} />
           </div>
         )}
 
@@ -1837,7 +1867,7 @@ export default function PuzzleSwap() {
 
             {filtered.length === 0
               ? <EmptyState icon="🔍" title="Nothing here" sub="Try adjusting your filters, or list the first puzzle in this category." action={currentUser && <PrimaryBtn onClick={()=>setShowList(true)} style={{ margin:"0 auto", display:"inline-flex" }}>+ List a Puzzle</PrimaryBtn>} />
-              : <Grid items={filtered} />
+              : <Grid onSel={setSel} onReq={handleReq} savedList={savedList} onToggleSave={handleToggleSave} items={filtered} />
             }
           </>
         )}
@@ -1848,7 +1878,7 @@ export default function PuzzleSwap() {
             <SectionHead title="Saved puzzles" sub="Puzzles you're keeping an eye on." />
             {savedList.length === 0
               ? <EmptyState icon="♡" title="Nothing saved yet" sub="Browse the marketplace and tap the heart to save any puzzle here." action={<PrimaryBtn onClick={()=>nav("browse")} style={{ margin:"0 auto", display:"inline-flex" }}>Browse Puzzles</PrimaryBtn>} />
-              : <Grid items={puzzles.filter(p => savedList.includes(p.id))} />
+              : <Grid onSel={setSel} onReq={handleReq} savedList={savedList} onToggleSave={handleToggleSave} items={puzzles.filter(p => savedList.includes(p.id))} />
             }
           </>
         )}
@@ -1867,6 +1897,7 @@ export default function PuzzleSwap() {
                       onAccept={()=>handleAccept(r.id)}
                       onDecline={()=>handleDecline(r.id)}
                       onOpenThread={(id)=>{ setOpenThread(id); markThreadRead(id); }}
+                      onDelete={()=>handleDeleteInboxItem(r.id)}
                     />
                   ))}
                 </div>
@@ -1979,7 +2010,9 @@ export default function PuzzleSwap() {
         )}
 
         {/* ── PROFILE ── */}
-        {!showList && !sel && !viewProfile && view === "profile" && currentUser && profEdit && (
+        {!showList && !sel && !viewProfile && view === "profile" && currentUser && (() => {
+          const pe = profEdit || currentUser;
+          return (
           <div style={{ maxWidth:540 }}>
             <SectionHead title="My profile" />
             <div style={{ background:"var(--warm-white)", border:"1px solid var(--ink-15)", borderRadius:14, padding:28, marginBottom:20 }}>
@@ -1999,13 +2032,13 @@ export default function PuzzleSwap() {
             <div style={{ background:"var(--warm-white)", borderRadius:14, padding:28, border:"1px solid var(--ink-15)" }}>
               <div style={{ fontSize:16, fontFamily:"var(--serif)", color:"var(--ink)", marginBottom:20 }}>Edit details</div>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                <Inp label="Name" value={profEdit.name} onChange={e=>setProfEdit(p=>({...p,name:e.target.value}))} />
-                <Inp label="ZIP Code" placeholder="e.g. 60126" value={profEdit.location||""} onChange={e=>setProfEdit(p=>({...p,location:e.target.value}))} />
+                <Inp label="Name" value={pe.name||""} onChange={e=>setProfEdit(p=>({...(p||currentUser),name:e.target.value}))} />
+                <Inp label="ZIP Code" placeholder="e.g. 60126" value={pe.location||""} onChange={e=>setProfEdit(p=>({...(p||currentUser),location:e.target.value}))} />
               </div>
-              <Sel label="Trade preference" value={profEdit.trade_preference||"Both"} onChange={e=>setProfEdit(p=>({...p,trade_preference:e.target.value}))}>{TRADE_OPTS.map(c=><option key={c}>{c}</option>)}</Sel>
-              <Inp label="Bio (optional)" placeholder="A line about your puzzle style…" value={profEdit.bio||""} onChange={e=>setProfEdit(p=>({...p,bio:e.target.value}))} />
+              <Sel label="Trade preference" value={pe.trade_preference||"Both"} onChange={e=>setProfEdit(p=>({...(p||currentUser),trade_preference:e.target.value}))}>{TRADE_OPTS.map(c=><option key={c}>{c}</option>)}</Sel>
+              <Inp label="Bio (optional)" placeholder="A line about your puzzle style…" value={pe.bio||""} onChange={e=>setProfEdit(p=>({...(p||currentUser),bio:e.target.value}))} />
               <div style={{ display:"flex", gap:10 }}>
-                <GhostBtn style={{ flex:1 }} onClick={()=>{setProfEdit(null);setView("browse");}}>Cancel</GhostBtn>
+                <GhostBtn style={{ flex:1 }} onClick={()=>{ setProfEdit(null); nav("browse"); }}>Cancel</GhostBtn>
                 <PrimaryBtn style={{ flex:2 }} onClick={saveProfile}>Save changes</PrimaryBtn>
               </div>
             </div>
@@ -2013,7 +2046,8 @@ export default function PuzzleSwap() {
               <button onClick={handleLogout} style={{ background:"none", border:"none", cursor:"pointer", fontSize:16, color:"var(--ink-40)", fontFamily:"var(--sans)", textDecoration:"underline", textUnderlineOffset:"3px" }}>Log out</button>
             </div>
           </div>
-        )}
+          );
+        })()}
       </main>
 
       {/* ── AUTH MODAL ── */}
@@ -2108,7 +2142,6 @@ export default function PuzzleSwap() {
                     setShowList(false);
                     setViewProf(null);
                     setSel(p); // set AFTER goBack-like resets so it isn't wiped
-                    window.history.pushState({ view: "browse", sel: p.id }, "", window.location.pathname);
                   }}
                     style={{ width:"100%", display:"flex", alignItems:"center", gap:14, padding:"14px 20px", background:"none", border:"none", borderBottom:"1px solid var(--ink-08)", cursor:"pointer", textAlign:"left", transition:"background .12s" }}
                     onMouseEnter={e=>e.currentTarget.style.background="var(--cream)"}
