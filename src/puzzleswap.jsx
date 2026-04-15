@@ -259,7 +259,6 @@ const EMOJIS = ["🏔️","🌊","🌸","🌆","🗺️","🌌","🦁","🐬","�
 // 4. Replace "puzzleswap-20" below with your actual ID
 const AFFILIATE_TAG    = "puzzleswap-20";
 const PIRATESHIP_REF_URL = "https://www.pirateship.com";
-const SUPPORT_EMAIL    = "info@getpuzzleswap.com";
 const BOOST_PRICE = "$1.99";
 const BOOST_MS    = 7 * 864e5;
 
@@ -2367,11 +2366,6 @@ export default function PuzzleSwap() {
             <span style={{ fontSize:16, fontFamily:"var(--serif)", color:"var(--ink)", fontWeight:700, fontStyle:"italic" }}>puzzleswap</span>
           </div>
           <div style={{ display:"flex", gap:24, flexWrap:"wrap", alignItems:"center" }}>
-            <a href={`mailto:${SUPPORT_EMAIL}`} style={{ fontSize:13, color:"var(--ink-40)", fontFamily:"var(--sans)", textDecoration:"none" }}
-              onMouseEnter={e=>e.currentTarget.style.color="var(--terracotta)"}
-              onMouseLeave={e=>e.currentTarget.style.color="var(--ink-40)"}>
-              {SUPPORT_EMAIL}
-            </a>
             <span style={{ fontSize:12, color:"var(--ink-40)", fontFamily:"var(--sans)" }}>© {new Date().getFullYear()} puzzleswap · Free puzzle trading</span>
           </div>
         </div>
